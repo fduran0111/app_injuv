@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.data.DocumentItem
 import com.injuv.voluntariado.data.SampleData
@@ -32,7 +33,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun DocumentsScreen() {
+fun DocumentsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
 
@@ -44,24 +45,19 @@ fun DocumentsScreen() {
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
-            ) {
-                Column {
-                    Text("Documentos", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-                    Spacer(Modifier.height(2.dp))
-                    Text("Reglamentos, formularios y guías descargables", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-                    Spacer(Modifier.height(16.dp))
+            AppScreenHeader(
+                title = "Documentos",
+                subtitle = "Reglamentos, formularios y guías descargables",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
+                bottomContent = {
                     FilterChipsRow(
                         options = SampleData.documentCategories,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
-                }
-            }
+                },
+            )
         }
 
         items(filtered) { doc ->

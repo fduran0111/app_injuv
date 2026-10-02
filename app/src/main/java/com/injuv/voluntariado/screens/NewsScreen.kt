@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.data.NewsItem
 import com.injuv.voluntariado.data.SampleData
@@ -29,7 +30,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun NewsScreen() {
+fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todas") }
 
@@ -41,24 +42,19 @@ fun NewsScreen() {
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
-            ) {
-                Column {
-                    Text("Noticias", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-                    Spacer(Modifier.height(2.dp))
-                    Text("Novedades del programa de voluntariado", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-                    Spacer(Modifier.height(16.dp))
+            AppScreenHeader(
+                title = "Noticias",
+                subtitle = "Novedades del programa de voluntariado",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
+                bottomContent = {
                     FilterChipsRow(
                         options = SampleData.newsCategories,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
-                }
-            }
+                },
+            )
         }
 
         items(filtered) { news ->

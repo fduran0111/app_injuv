@@ -86,6 +86,12 @@ object SampleData {
         HistoryProgram(6, "Monitores Ambientales", "Min. del Ambiente", 40, "2024", false, 4),
     )
 
+    val appliedPrograms = listOf(
+        AppliedProgram(7, "Alfabetización Digital", "MINEDU", "28 Sep 2026", "En revisión"),
+        AppliedProgram(8, "Arte y Cultura Urbana", "Cultura Lima", "22 Sep 2026", "Postulada"),
+        AppliedProgram(9, "Reforestación Andina", "SERNANP", "18 Sep 2026", "En revisión"),
+    )
+
     val pendingApplicants = listOf(
         Applicant(1, "Carlos Mamani", "Alfabetización Digital", "29 Ago 2026", "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&auto=format"),
         Applicant(2, "Ana Lucía Torres", "Tutoría Ambiental", "28 Ago 2026", "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&auto=format"),

@@ -29,6 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.data.Book
 import com.injuv.voluntariado.data.SampleData
@@ -37,7 +38,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun LibraryScreen() {
+fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
 
@@ -54,24 +55,19 @@ fun LibraryScreen() {
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
-            ) {
-                Column {
-                    Text("Biblioteca", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-                    Spacer(Modifier.height(2.dp))
-                    Text("Lecturas recomendadas sobre voluntariado", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-                    Spacer(Modifier.height(16.dp))
+            AppScreenHeader(
+                title = "Biblioteca",
+                subtitle = "Lecturas recomendadas sobre voluntariado",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
+                bottomContent = {
                     FilterChipsRow(
                         options = SampleData.bookCategories,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
-                }
-            }
+                },
+            )
         }
 
         items(filtered) { book ->

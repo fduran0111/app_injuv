@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.data.Course
 import com.injuv.voluntariado.data.SampleData
@@ -34,7 +35,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun AcademyScreen() {
+fun AcademyScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     val T = LocalAppColors.current
     var selectedLevel by remember { mutableStateOf("Todos") }
 
@@ -46,24 +47,19 @@ fun AcademyScreen() {
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
-            ) {
-                Column {
-                    Text("Academia", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
-                    Spacer(Modifier.height(2.dp))
-                    Text("Cursos para potenciar tu voluntariado", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
-                    Spacer(Modifier.height(16.dp))
+            AppScreenHeader(
+                title = "Academia",
+                subtitle = "Cursos para potenciar tu voluntariado",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
+                bottomContent = {
                     FilterChipsRow(
                         options = SampleData.courseLevels,
                         selected = selectedLevel,
                         onSelect = { selectedLevel = it },
                     )
-                }
-            }
+                },
+            )
         }
 
         items(filtered) { course ->

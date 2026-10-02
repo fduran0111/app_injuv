@@ -2,16 +2,31 @@ package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,17 +42,26 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.components.MenuIconButton
+import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.data.ActiveProgram
+import com.injuv.voluntariado.data.AppliedProgram
 import com.injuv.voluntariado.data.HistoryProgram
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
+private enum class ProfileTab { EnCurso, Postuladas, Terminadas }
+
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    onShowAlert: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onToggleMenu: () -> Unit,
+) {
     val T = LocalAppColors.current
-    var activeTab by remember { mutableStateOf("activas") } // "activas" | "historial"
+    var activeTab by remember { mutableStateOf(ProfileTab.EnCurso) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -48,56 +72,118 @@ fun ProfileScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
+                    .padding(horizontal = 12.dp, vertical = 16.dp),
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Box(
-                        modifier = Modifier
-                            .size(76.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    MenuIconButton(onClick = onToggleMenu)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text("F", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
+                        Box(
+                            modifier = Modifier
+                                .size(76.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("F", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 28.sp, color = Color.White)
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Text("Francisco", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                        Text("Voluntario desde 2024", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                        Spacer(Modifier.height(18.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            ProfileStat("${SampleData.activePrograms.size}", "En curso")
+                            ProfileStat("${SampleData.appliedPrograms.size}", "Postuladas")
+                            ProfileStat("${SampleData.historyPrograms.size}", "Terminadas")
+                        }
                     }
-                    Spacer(Modifier.height(10.dp))
-                    Text("Francisco", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                    Text("Voluntario desde 2024", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-
-                    Spacer(Modifier.height(18.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ProfileStat("178h", "Acumuladas")
-                        ProfileStat("6", "Programas")
-                        ProfileStat("4", "Certificados")
+                    Column {
+                        NotificationIconButton(onClick = onShowAlert)
+                        IconButton(onClick = onOpenSettings) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = Color.White)
+                            }
+                        }
                     }
                 }
             }
         }
 
         item {
+            Text(
+                "Mis oportunidades",
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = T.textMuted,
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp),
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 16.dp)
+                    .padding(horizontal = 20.dp)
                     .clip(RoundedCornerShape(50))
                     .background(T.surface1),
             ) {
-                ProfileTab("Activas", isSelected = activeTab == "activas", modifier = Modifier
+                ProfileTabChip("En curso", isSelected = activeTab == ProfileTab.EnCurso, modifier = Modifier
                     .weight(1f)
-                    .clickable { activeTab = "activas" })
-                ProfileTab("Historial", isSelected = activeTab == "historial", modifier = Modifier
+                    .clickable { activeTab = ProfileTab.EnCurso })
+                ProfileTabChip("Postuladas", isSelected = activeTab == ProfileTab.Postuladas, modifier = Modifier
                     .weight(1f)
-                    .clickable { activeTab = "historial" })
+                    .clickable { activeTab = ProfileTab.Postuladas })
+                ProfileTabChip("Terminadas", isSelected = activeTab == ProfileTab.Terminadas, modifier = Modifier
+                    .weight(1f)
+                    .clickable { activeTab = ProfileTab.Terminadas })
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        when (activeTab) {
+            ProfileTab.EnCurso -> items(SampleData.activePrograms) { program ->
+                ActiveProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+            }
+            ProfileTab.Postuladas -> items(SampleData.appliedPrograms) { program ->
+                AppliedProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+            }
+            ProfileTab.Terminadas -> items(SampleData.historyPrograms) { program ->
+                HistoryProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
             }
         }
 
-        if (activeTab == "activas") {
-            items(SampleData.activePrograms) { program ->
-                ActiveProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
-            }
-        } else {
-            items(SampleData.historyPrograms) { program ->
-                HistoryProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+        item {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .clickable { }
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = null, tint = T.coral, modifier = Modifier.size(22.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text("Centro de ayuda", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                    Text("Preguntas frecuentes y soporte", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                }
+                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
             }
         }
     }
@@ -112,20 +198,20 @@ private fun ProfileStat(value: String, label: String) {
 }
 
 @Composable
-private fun ProfileTab(label: String, isSelected: Boolean, modifier: Modifier = Modifier) {
+private fun ProfileTabChip(label: String, isSelected: Boolean, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(50))
             .background(if (isSelected) Brush.linearGradient(listOf(T.coral, T.coralDark)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
-            .padding(vertical = 10.dp),
+            .padding(vertical = 10.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
             fontFamily = SpaceGrotesk,
             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
             color = if (isSelected) Color.White else T.textMuted,
         )
     }
@@ -162,6 +248,34 @@ private fun ActiveProgramCard(program: ActiveProgram, modifier: Modifier = Modif
 }
 
 @Composable
+private fun AppliedProgramCard(program: AppliedProgram, modifier: Modifier = Modifier) {
+    val T = LocalAppColors.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.HourglassTop, contentDescription = null, tint = T.yellow, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(program.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+            Text(program.org, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+            Text("Postuló el ${program.appliedDate}", fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
+        }
+        Text(
+            program.status,
+            fontFamily = SpaceGrotesk,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 11.sp,
+            color = T.yellow,
+        )
+    }
+}
+
+@Composable
 private fun HistoryProgramCard(program: HistoryProgram, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
     Row(
@@ -178,14 +292,14 @@ private fun HistoryProgramCard(program: HistoryProgram, modifier: Modifier = Mod
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 repeat(program.rating) {
-                    androidx.compose.material3.Icon(Icons.Filled.Star, contentDescription = null, tint = T.yellow, modifier = Modifier.size(13.dp))
+                    Icon(Icons.Filled.Star, contentDescription = null, tint = T.yellow, modifier = Modifier.size(13.dp))
                 }
                 Spacer(Modifier.width(8.dp))
                 Text("${program.hours}h", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
             }
         }
         if (program.certificate) {
-            androidx.compose.material3.Icon(Icons.Filled.Verified, contentDescription = "Certificado", tint = T.green)
+            Icon(Icons.Filled.Verified, contentDescription = "Certificado", tint = T.green)
         }
     }
 }

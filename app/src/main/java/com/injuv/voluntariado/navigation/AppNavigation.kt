@@ -1,9 +1,17 @@
 package com.injuv.voluntariado.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -12,22 +20,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.NavType
 import com.injuv.voluntariado.components.BottomNavItem
+import com.injuv.voluntariado.components.ResourcesMenuCard
+import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
 import com.injuv.voluntariado.data.SampleData
-import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.screens.AcademyScreen
-import com.injuv.voluntariado.screens.AdminScreen
 import com.injuv.voluntariado.screens.ApplicationDetailScreen
 import com.injuv.voluntariado.screens.ApplicationsScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
@@ -35,21 +47,46 @@ import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
 import com.injuv.voluntariado.screens.NewsScreen
 import com.injuv.voluntariado.screens.ProfileScreen
+import com.injuv.voluntariado.screens.SettingsScreen
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
-import androidx.compose.material3.NavigationBarItem
-// Pantallas donde se muestra la barra de navegación inferior (igual que showBottomNav en App.tsx).
-private val screensWithBottomNav = setOf("home", "applications", "news", "academy", "profile")
+
+private val screensWithBottomNav = setOf(
+    "home",
+    "applications",
+    "news",
+    "profile",
+    "documents",
+    "academy",
+    "library",
+)
+
+private fun NavHostController.goTo(route: String) {
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) {
+            inclusive = false
+            saveState = false
+        }
+        launchSingleTop = true
+        restoreState = false
+    }
+}
 
 @Composable
-fun InjuvApp() {
+fun InjuvApp(
+    isDarkTheme: Boolean,
+    onDarkThemeChange: (Boolean) -> Unit,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: "home"
     val currentBaseRoute = currentRoute.substringBefore("/")
 
     var showStatusAlert by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
     val T = LocalAppColors.current
+    val onShowAlert = { showStatusAlert = true }
+    val onToggleMenu = { menuOpen = !menuOpen }
 
     Scaffold(
         containerColor = T.bgBase,
@@ -58,54 +95,118 @@ fun InjuvApp() {
                 BottomBar(
                     currentRoute = currentBaseRoute,
                     onNavigate = { route ->
-                        navController.navigate(route) {
-                            popUpTo(navController.graph.startDestinationId) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        menuOpen = false
+                        navController.goTo(route)
                     },
                 )
             }
         },
     ) { innerPadding ->
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            color = T.bgBase,
         ) {
-            NavHost(navController = navController, startDestination = "home") {
-                composable("home") {
-                    HomeScreen(
-                        onNavigate = { route -> navController.navigate(route) },
-                        onOpenDetail = { id -> navController.navigate("application_detail/$id") },
-                        onShowAlert = { showStatusAlert = true },
-                    )
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = T.bgBase,
+            ) {
+                NavHost(navController = navController, startDestination = "home") {
+                    composable("home") {
+                        HomeScreen(
+                            onOpenDetail = { id ->
+                                menuOpen = false
+                                navController.navigate("application_detail/$id")
+                            },
+                            onShowAlert = onShowAlert,
+                            onToggleMenu = onToggleMenu,
+                        )
+                    }
+                    composable("applications") {
+                        ApplicationsScreen(
+                            onOpenDetail = { id ->
+                                menuOpen = false
+                                navController.navigate("application_detail/$id")
+                            },
+                            onShowAlert = onShowAlert,
+                            onToggleMenu = onToggleMenu,
+                        )
+                    }
+                    composable(
+                        "application_detail/{id}",
+                        arguments = listOf(navArgument("id") { type = NavType.IntType }),
+                    ) { entry ->
+                        val id = entry.arguments?.getInt("id") ?: 1
+                        val opportunity = SampleData.opportunities.find { it.id == id }
+                            ?: SampleData.opportunities.first()
+                        ApplicationDetailScreen(
+                            opportunity = opportunity,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable("profile") {
+                        ProfileScreen(
+                            onShowAlert = onShowAlert,
+                            onOpenSettings = {
+                                menuOpen = false
+                                navController.navigate("settings")
+                            },
+                            onToggleMenu = onToggleMenu,
+                        )
+                    }
+                    composable("settings") {
+                        SettingsScreen(
+                            isDarkTheme = isDarkTheme,
+                            onDarkThemeChange = onDarkThemeChange,
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable("news") {
+                        NewsScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)
+                    }
+                    composable("documents") {
+                        DocumentsScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)
+                    }
+                    composable("academy") {
+                        AcademyScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)
+                    }
+                    composable("library") {
+                        LibraryScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)
+                    }
                 }
-                composable("applications") {
-                    ApplicationsScreen(
-                        onOpenDetail = { id -> navController.navigate("application_detail/$id") },
-                    )
-                }
-                composable(
-                    "application_detail/{id}",
-                    arguments = listOf(navArgument("id") { type = NavType.IntType }),
-                ) { entry ->
-                    val id = entry.arguments?.getInt("id") ?: 1
-                    val opportunity = SampleData.opportunities.find { it.id == id } ?: SampleData.opportunities.first()
-                    ApplicationDetailScreen(
-                        opportunity = opportunity,
-                        onBack = { navController.popBackStack() },
-                    )
-                }
-                composable("profile") { ProfileScreen() }
-                composable("admin") {
-                    AdminScreen(onBack = { navController.popBackStack() })
-                }
-                composable("news") { NewsScreen() }
-                composable("documents") { DocumentsScreen() }
-                composable("academy") { AcademyScreen() }
-                composable("library") { LibraryScreen() }
+            }
+
+            AnimatedVisibility(
+                visible = menuOpen,
+                enter = fadeIn(),
+                exit = fadeOut(),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.38f))
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { MutableInteractionSource() },
+                        ) { menuOpen = false },
+                )
+            }
+
+            AnimatedVisibility(
+                visible = menuOpen,
+                enter = fadeIn() + slideInVertically { -it / 3 },
+                exit = fadeOut() + slideOutVertically { -it / 3 },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 12.dp, top = 58.dp),
+            ) {
+                ResourcesMenuCard(
+                    selectedRoute = currentBaseRoute,
+                    onSelect = { route ->
+                        menuOpen = false
+                        navController.goTo(route)
+                    },
+                )
             }
         }
     }

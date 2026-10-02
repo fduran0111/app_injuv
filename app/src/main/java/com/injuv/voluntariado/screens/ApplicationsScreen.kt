@@ -26,6 +26,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.SampleData
@@ -34,7 +35,11 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun ApplicationsScreen(onOpenDetail: (Int) -> Unit) {
+fun ApplicationsScreen(
+    onOpenDetail: (Int) -> Unit,
+    onShowAlert: () -> Unit,
+    onToggleMenu: () -> Unit,
+) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
 
@@ -49,35 +54,19 @@ fun ApplicationsScreen(onOpenDetail: (Int) -> Unit) {
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(20.dp),
-            ) {
-                Column {
-                    androidx.compose.material3.Text(
-                        "Postulaciones",
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = androidx.compose.ui.graphics.Color.White,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "${filtered.size} oportunidades disponibles",
-                        fontFamily = Outfit,
-                        fontSize = 13.sp,
-                        color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.85f),
-                    )
-                    Spacer(Modifier.height(16.dp))
+            AppScreenHeader(
+                title = "Postulaciones",
+                subtitle = "${filtered.size} oportunidades disponibles",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
+                bottomContent = {
                     FilterChipsRow(
                         options = SampleData.categories,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
-                }
-            }
+                },
+            )
         }
 
         items(filtered) { opportunity ->
