@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.Icon
@@ -32,7 +33,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun DocumentsScreen() {
+fun DocumentsScreen(onBack: (() -> Unit)? = null) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
 
@@ -51,7 +52,14 @@ fun DocumentsScreen() {
                     .padding(20.dp),
             ) {
                 Column {
-                    Text("Documentos", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                            }
+                        }
+                        Text("Documentos", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    }
                     Spacer(Modifier.height(2.dp))
                     Text("Reglamentos, formularios y guías descargables", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
                     Spacer(Modifier.height(16.dp))

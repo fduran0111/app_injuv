@@ -9,13 +9,22 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.injuv.voluntariado.components.ResourceNavItem
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
@@ -37,9 +47,12 @@ fun HomeScreen(
     onNavigate: (String) -> Unit,
     onOpenDetail: (Int) -> Unit,
     onShowAlert: () -> Unit,
+    onOpenMenu: () -> Unit,
+    userName: String = "Voluntario",
 ) {
     val T = LocalAppColors.current
     val featured = SampleData.opportunities.take(2)
+    var resourcesOpen by remember { mutableStateOf(true) }
 
     LazyColumn(
         modifier = Modifier
@@ -49,7 +62,7 @@ fun HomeScreen(
     ) {
         // Encabezado degradado
         item {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Brush.linearGradient(T.bgHeaderGradient))
@@ -60,9 +73,20 @@ fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.Top,
                 ) {
-                    Column {
+                    IconButton(onClick = onOpenMenu) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
                         Text(
-                            text = "Hola, Francisco 👋",
+                            text = "Hola, $userName 👋",
                             fontFamily = SpaceGrotesk,
                             fontWeight = FontWeight.Bold,
                             fontSize = 22.sp,
@@ -91,7 +115,10 @@ fun HomeScreen(
 
                 Spacer(Modifier.height(20.dp))
 
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     StatPill(value = "10,000+", label = "Voluntarios", modifier = Modifier.weight(1f))
                     StatPill(value = "140+", label = "Comunas", modifier = Modifier.weight(1f))
                 }
@@ -126,60 +153,60 @@ fun HomeScreen(
         // Accesos rápidos
         item {
             Column(modifier = Modifier.padding(top = 28.dp, start = 20.dp, end = 20.dp)) {
-                Text(
-                    text = "Accesos rápidos",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp,
-                    color = T.textPrimary,
-                )
-                Spacer(Modifier.height(12.dp))
-
-                val quickLinks = listOf(
-                    Triple("Noticias", "news", T.blue),
-                    Triple("Documentos", "documents", T.yellow),
-                    Triple("Academia", "academy", T.green),
-                    Triple("Biblioteca", "library", T.coral),
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    quickLinks.forEach { (label, route, color) ->
-                        QuickLinkCard(
-                            label = label,
-                            accent = color,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable { onNavigate(route) },
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(14.dp))
-
-                // Acceso a vista de administrador (rol institucional)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
                         .background(Brush.linearGradient(T.bgCardGradient))
-                        .clickable { onNavigate("admin") }
+                        .clickable { resourcesOpen = !resourcesOpen }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(Icons.Filled.Groups, contentDescription = null, tint = T.blue)
-                    Spacer(Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            "Panel de administrador",
+                            text = "Recursos",
                             fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp,
                             color = T.textPrimary,
                         )
                         Text(
-                            "Gestiona postulantes y cupos",
+                            "Documentos, academia y biblioteca",
                             fontFamily = Outfit,
                             fontSize = 12.sp,
                             color = T.textMuted,
+                        )
+                    }
+                    Icon(
+                        if (resourcesOpen) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = if (resourcesOpen) "Cerrar" else "Abrir",
+                        tint = T.coral,
+                    )
+                }
+
+                if (resourcesOpen) {
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ResourceNavItem(
+                            title = "Documentos",
+                            subtitle = "Reglamentos y formularios",
+                            icon = Icons.Filled.Description,
+                            accent = T.yellow,
+                            onClick = { onNavigate("documents") },
+                        )
+                        ResourceNavItem(
+                            title = "Academia",
+                            subtitle = "Cursos de voluntariado",
+                            icon = Icons.Filled.School,
+                            accent = T.green,
+                            onClick = { onNavigate("academy") },
+                        )
+                        ResourceNavItem(
+                            title = "Biblioteca",
+                            subtitle = "Lecturas recomendadas",
+                            icon = Icons.Filled.MenuBook,
+                            accent = T.coral,
+                            onClick = { onNavigate("library") },
                         )
                     }
                 }
@@ -242,32 +269,5 @@ private fun FeaturedOpportunityCard(opportunity: Opportunity, onClick: () -> Uni
                 color = T.coral,
             )
         }
-    }
-}
-
-@Composable
-private fun QuickLinkCard(label: String, accent: Color, modifier: Modifier = Modifier) {
-    val T = LocalAppColors.current
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(T.surface1)
-            .padding(vertical = 16.dp, horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(8.dp)
-                .clip(CircleShape)
-                .background(accent),
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            label,
-            fontFamily = SpaceGrotesk,
-            fontWeight = FontWeight.Medium,
-            fontSize = 12.sp,
-            color = T.textPrimary,
-        )
     }
 }

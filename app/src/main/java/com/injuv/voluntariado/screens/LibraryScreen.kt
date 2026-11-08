@@ -37,7 +37,7 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun LibraryScreen() {
+fun LibraryScreen(onBack: (() -> Unit)? = null) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
 
@@ -61,7 +61,14 @@ fun LibraryScreen() {
                     .padding(20.dp),
             ) {
                 Column {
-                    Text("Biblioteca", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (onBack != null) {
+                            IconButton(onClick = onBack) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+                            }
+                        }
+                        Text("Biblioteca", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = Color.White)
+                    }
                     Spacer(Modifier.height(2.dp))
                     Text("Lecturas recomendadas sobre voluntariado", fontFamily = Outfit, fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f))
                     Spacer(Modifier.height(16.dp))

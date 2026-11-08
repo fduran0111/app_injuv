@@ -4,6 +4,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -104,12 +105,31 @@ fun lightAppColors() = AppColors(
     inputBorder = Color(0x1F0A1628),
 )
 
+// Gradientes predefinidos para el banner del perfil (índice 0 = gradiente del tema).
+val bannerPresets: List<List<Color>> = listOf(
+    listOf(Color(0xFFFF4D6D), Color(0xFFE03555)),
+    listOf(Color(0xFF059669), Color(0xFF34D399)),
+    listOf(Color(0xFF7C3AED), Color(0xFFA78BFA)),
+    listOf(Color(0xFFD97706), Color(0xFFFBBF24)),
+    listOf(Color(0xFF0F172A), Color(0xFF334155)),
+    listOf(Color(0xFFBE185D), Color(0xFFF472B6)),
+)
+
 val LocalAppColors = compositionLocalOf { darkAppColors() }
 
+val LocalOnThemeChange = staticCompositionLocalOf<(Boolean) -> Unit> { {} }
+
 @Composable
-fun ProvideAppTheme(isDark: Boolean, content: @Composable () -> Unit) {
+fun ProvideAppTheme(
+    isDark: Boolean,
+    onThemeChange: (Boolean) -> Unit = {},
+    content: @Composable () -> Unit,
+) {
     val colors = if (isDark) darkAppColors() else lightAppColors()
-    CompositionLocalProvider(LocalAppColors provides colors) {
+    CompositionLocalProvider(
+        LocalAppColors provides colors,
+        LocalOnThemeChange provides onThemeChange,
+    ) {
         MaterialTheme(content = content)
     }
 }

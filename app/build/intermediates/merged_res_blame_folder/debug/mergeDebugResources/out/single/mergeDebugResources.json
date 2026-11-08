@@ -1,50 +1,70 @@
 [
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_space_grotesk_light.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/space_grotesk_light.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_outfit_semibold.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\outfit_semibold.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_space_grotesk_bold.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/space_grotesk_bold.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_space_grotesk_light.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\space_grotesk_light.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_outfit_light.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/outfit_light.ttf"
+        "merged": "com.injuv.voluntariado.app-debug-52:/drawable_ic_launcher_foreground.png.flat",
+        "source": "com.injuv.voluntariado.app-main-54:/drawable/ic_launcher_foreground.png"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_space_grotesk_semibold.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/space_grotesk_semibold.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\drawable_ic_injuv_logo.png.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\drawable\\ic_injuv_logo.png"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_space_grotesk_regular.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/space_grotesk_regular.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_space_grotesk_bold.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\space_grotesk_bold.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_space_grotesk_medium.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/space_grotesk_medium.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_outfit_regular.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/outfit_regular.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_outfit_medium.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\outfit_medium.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/mipmap-anydpi-v26/ic_launcher_round.xml"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\drawable_ic_launcher_foreground.png.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\drawable\\ic_launcher_foreground.png"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/mipmap-anydpi-v26_ic_launcher.xml.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/mipmap-anydpi-v26/ic_launcher.xml"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_space_grotesk_regular.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\space_grotesk_regular.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_outfit_semibold.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/outfit_semibold.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_outfit_regular.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\outfit_regular.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/drawable_ic_launcher_foreground.xml.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/drawable/ic_launcher_foreground.xml"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_outfit_light.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\outfit_light.ttf"
     },
     {
-        "merged": "com.injuv.voluntariado.app-debug-52:/font_outfit_medium.ttf.flat",
-        "source": "com.injuv.voluntariado.app-main-54:/font/outfit_medium.ttf"
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\drawable-xxxhdpi_ic_injuv_logo.png.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\drawable-xxxhdpi\\ic_injuv_logo.png"
+    },
+    {
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_space_grotesk_medium.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\space_grotesk_medium.ttf"
+    },
+    {
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\drawable_ic_injuv_logo.xml.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\drawable\\ic_injuv_logo.xml"
+    },
+    {
+        "merged": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-debug-52:\\font_space_grotesk_semibold.ttf.flat",
+        "source": "C:\\Users\\carlo\\.gradle\\daemon\\8.6\\com.injuv.voluntariado.app-main-54:\\font\\space_grotesk_semibold.ttf"
     }
 ]

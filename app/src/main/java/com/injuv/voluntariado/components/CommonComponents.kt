@@ -4,14 +4,20 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
@@ -23,13 +29,17 @@ import androidx.compose.material.icons.outlined.School
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.ui.theme.LocalAppColors
+import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 /** Fila de chips horizontales con scroll, usada en Postulaciones, Noticias, Documentos, Academia y Biblioteca. */
@@ -80,6 +90,54 @@ enum class BottomNavItem(val route: String, val label: String) {
     News("news", "Noticias"),
     Academy("academy", "Academia"),
     Profile("profile", "Perfil"),
+}
+
+@Composable
+fun ResourceNavItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val T = LocalAppColors.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(accent.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = accent)
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = T.textPrimary,
+            )
+            Text(
+                subtitle,
+                fontFamily = Outfit,
+                fontSize = 12.sp,
+                color = T.textMuted,
+            )
+        }
+        Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
+    }
 }
 
 @Composable

@@ -94,3 +94,35 @@ data class Book(
     val savedDefault: Boolean,
     val coverUrl: String,
 )
+
+data class Skill(
+    val name: String,
+    val level: Int,
+)
+
+data class PrivacySettings(
+    val volunteerHours: Boolean = true,
+    val age: Boolean = true,
+    val email: Boolean = true,
+    val phone: Boolean = true,
+    val location: Boolean = true,
+    val aboutMe: Boolean = true,
+    val volunteerExperience: Boolean = true,
+    val skills: Boolean = true,
+    val reviews: Boolean = true,
+)
+
+data class UserProfile(
+    val name: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val age: String = "",
+    val region: String = "",
+    val city: String = "",
+    val commune: String = "",
+    val about: String = "",
+    val skills: List<Skill> = emptyList(),
+    val bannerIndex: Int = 0,
+    val photoUri: String? = null,
+    val privacy: PrivacySettings = PrivacySettings(),
+)
