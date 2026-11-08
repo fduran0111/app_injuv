@@ -34,6 +34,14 @@ data class HistoryProgram(
     val rating: Int,
 )
 
+data class AppliedProgram(
+    val id: Int,
+    val title: String,
+    val org: String,
+    val appliedDate: String,
+    val status: String,
+)
+
 data class Applicant(
     val id: Int,
     val name: String,

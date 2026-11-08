@@ -2,29 +2,27 @@ package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MenuBook
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.injuv.voluntariado.components.ResourceNavItem
+import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
@@ -44,15 +42,13 @@ import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
 fun HomeScreen(
-    onNavigate: (String) -> Unit,
     onOpenDetail: (Int) -> Unit,
     onShowAlert: () -> Unit,
-    onOpenMenu: () -> Unit,
+    onToggleMenu: () -> Unit,
     userName: String = "Voluntario",
 ) {
     val T = LocalAppColors.current
     val featured = SampleData.opportunities.take(2)
-    var resourcesOpen by remember { mutableStateOf(true) }
 
     LazyColumn(
         modifier = Modifier
@@ -60,72 +56,20 @@ fun HomeScreen(
             .background(T.bgBase),
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
-        // Encabezado degradado
         item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(horizontal = 20.dp, vertical = 28.dp),
+            AppScreenHeader(
+                title = "Hola, ${userName.substringBefore(" ")} 👋",
+                subtitle = "Encuentra tu próxima experiencia de voluntariado",
+                onNotificationClick = onShowAlert,
+                onMenuClick = onToggleMenu,
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    IconButton(onClick = onOpenMenu) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Menú", tint = Color.White)
-                        }
-                    }
-                    Column(modifier = Modifier.weight(1f).padding(horizontal = 8.dp)) {
-                        Text(
-                            text = "Hola, $userName 👋",
-                            fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
-                            color = Color.White,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "Encuentra tu próxima experiencia de voluntariado",
-                            fontFamily = Outfit,
-                            fontSize = 13.sp,
-                            color = Color.White.copy(alpha = 0.85f),
-                        )
-                    }
-                    IconButton(onClick = onShowAlert) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Filled.Notifications, contentDescription = "Alertas", tint = Color.White)
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StatPill(value = "10,000+", label = "Voluntarios", modifier = Modifier.weight(1f))
                     StatPill(value = "140+", label = "Comunas", modifier = Modifier.weight(1f))
                 }
             }
         }
 
-        // Destacados
         item {
             Column(modifier = Modifier.padding(top = 24.dp, start = 20.dp, end = 20.dp)) {
                 Text(
@@ -146,69 +90,6 @@ fun HomeScreen(
                         opportunity = opportunity,
                         onClick = { onOpenDetail(opportunity.id) },
                     )
-                }
-            }
-        }
-
-        // Accesos rápidos
-        item {
-            Column(modifier = Modifier.padding(top = 28.dp, start = 20.dp, end = 20.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Brush.linearGradient(T.bgCardGradient))
-                        .clickable { resourcesOpen = !resourcesOpen }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Recursos",
-                            fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 17.sp,
-                            color = T.textPrimary,
-                        )
-                        Text(
-                            "Documentos, academia y biblioteca",
-                            fontFamily = Outfit,
-                            fontSize = 12.sp,
-                            color = T.textMuted,
-                        )
-                    }
-                    Icon(
-                        if (resourcesOpen) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                        contentDescription = if (resourcesOpen) "Cerrar" else "Abrir",
-                        tint = T.coral,
-                    )
-                }
-
-                if (resourcesOpen) {
-                    Spacer(Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ResourceNavItem(
-                            title = "Documentos",
-                            subtitle = "Reglamentos y formularios",
-                            icon = Icons.Filled.Description,
-                            accent = T.yellow,
-                            onClick = { onNavigate("documents") },
-                        )
-                        ResourceNavItem(
-                            title = "Academia",
-                            subtitle = "Cursos de voluntariado",
-                            icon = Icons.Filled.School,
-                            accent = T.green,
-                            onClick = { onNavigate("academy") },
-                        )
-                        ResourceNavItem(
-                            title = "Biblioteca",
-                            subtitle = "Lecturas recomendadas",
-                            icon = Icons.Filled.MenuBook,
-                            accent = T.coral,
-                            onClick = { onNavigate("library") },
-                        )
-                    }
                 }
             }
         }
