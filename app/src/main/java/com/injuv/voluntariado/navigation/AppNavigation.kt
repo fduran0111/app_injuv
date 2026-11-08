@@ -39,6 +39,8 @@ import com.injuv.voluntariado.components.BottomNavItem
 import com.injuv.voluntariado.components.ResourcesMenuCard
 import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
+import com.injuv.voluntariado.data.ApplicationPreferences
+import com.injuv.voluntariado.data.AppliedProgram
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.data.SessionPreferences
@@ -50,6 +52,7 @@ import com.injuv.voluntariado.screens.DocumentsScreen
 import com.injuv.voluntariado.screens.EditProfileScreen
 import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
+import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
@@ -86,8 +89,10 @@ fun InjuvApp(
     val context = LocalContext.current
     val session = remember { SessionPreferences(context) }
     val profilePrefs = remember { ProfilePreferences(context) }
+    val applicationPrefs = remember { ApplicationPreferences(context) }
     var loggedIn by remember { mutableStateOf(session.isLoggedIn()) }
     var userProfile by remember { mutableStateOf(profilePrefs.load(session.displayName(), session.email())) }
+    var appliedIds by remember { mutableStateOf(applicationPrefs.appliedIds()) }
 
     if (!loggedIn) {
         AuthScreen(
@@ -115,7 +120,9 @@ fun InjuvApp(
     fun logout() {
         session.logout()
         profilePrefs.clear()
+        applicationPrefs.clear()
         userProfile = profilePrefs.load("", "")
+        appliedIds = emptySet()
         loggedIn = false
     }
 
@@ -163,6 +170,14 @@ fun InjuvApp(
                             onShowAlert = onShowAlert,
                             onToggleMenu = onToggleMenu,
                             userName = userProfile.name,
+                            onOpenNews = {
+                                menuOpen = false
+                                navController.goTo("news")
+                            },
+                            onOpenNewsDetail = { id ->
+                                menuOpen = false
+                                navController.navigate("news_detail/$id")
+                            },
                         )
                     }
                     composable("applications") {
@@ -185,6 +200,11 @@ fun InjuvApp(
                         ApplicationDetailScreen(
                             opportunity = opportunity,
                             onBack = { navController.popBackStack() },
+                            applied = id in appliedIds,
+                            onApply = {
+                                applicationPrefs.apply(id)
+                                appliedIds = appliedIds + id
+                            },
                         )
                     }
                     composable("profile") {
@@ -200,6 +220,17 @@ fun InjuvApp(
                                 navController.navigate("edit_profile")
                             },
                             profile = userProfile,
+                            extraApplied = SampleData.opportunities
+                                .filter { it.id in appliedIds }
+                                .map {
+                                    AppliedProgram(
+                                        it.id,
+                                        it.title,
+                                        it.org,
+                                        java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale("es", "CL")).format(java.util.Date()),
+                                        "Postulada",
+                                    )
+                                },
                         )
                     }
                     composable("settings") {
@@ -226,7 +257,26 @@ fun InjuvApp(
                         )
                     }
                     composable("news") {
-                        NewsScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)
+                        NewsScreen(
+                            onShowAlert = onShowAlert,
+                            onToggleMenu = onToggleMenu,
+                            onOpenDetail = { id ->
+                                menuOpen = false
+                                navController.navigate("news_detail/$id")
+                            },
+                        )
+                    }
+                    composable(
+                        "news_detail/{id}",
+                        arguments = listOf(navArgument("id") { type = NavType.IntType }),
+                    ) { entry ->
+                        val id = entry.arguments?.getInt("id") ?: 1
+                        val news = SampleData.news.find { it.id == id }
+                            ?: SampleData.news.first()
+                        NewsDetailScreen(
+                            news = news,
+                            onBack = { navController.popBackStack() },
+                        )
                     }
                     composable("documents") {
                         DocumentsScreen(onShowAlert = onShowAlert, onToggleMenu = onToggleMenu)

@@ -65,6 +65,7 @@ data class NewsItem(
     val readTime: String,
     val featured: Boolean,
     val imageUrl: String,
+    val body: String = "",
 )
 
 data class DocumentItem(

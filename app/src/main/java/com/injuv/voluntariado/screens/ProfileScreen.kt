@@ -71,6 +71,7 @@ fun ProfileScreen(
     onToggleMenu: () -> Unit,
     onEditProfile: () -> Unit = {},
     profile: UserProfile = UserProfile(),
+    extraApplied: List<AppliedProgram> = emptyList(),
 ) {
     val T = LocalAppColors.current
     var activeTab by remember { mutableStateOf(ProfileTab.EnCurso) }
@@ -142,7 +143,7 @@ fun ProfileScreen(
                         Spacer(Modifier.height(18.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             ProfileStat("${SampleData.activePrograms.size}", "En curso")
-                            ProfileStat("${SampleData.appliedPrograms.size}", "Postuladas")
+                            ProfileStat("${SampleData.appliedPrograms.size + extraApplied.size}", "Postuladas")
                             ProfileStat("${SampleData.historyPrograms.size}", "Terminadas")
                         }
                         Spacer(Modifier.height(14.dp))
@@ -277,7 +278,7 @@ fun ProfileScreen(
                 ProfileTab.EnCurso -> items(SampleData.activePrograms) { program ->
                     ActiveProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
                 }
-                ProfileTab.Postuladas -> items(SampleData.appliedPrograms) { program ->
+                ProfileTab.Postuladas -> items(SampleData.appliedPrograms + extraApplied) { program ->
                     AppliedProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
                 }
                 ProfileTab.Terminadas -> items(SampleData.historyPrograms) { program ->

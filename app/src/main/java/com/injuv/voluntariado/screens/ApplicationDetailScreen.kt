@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
@@ -35,7 +36,12 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun ApplicationDetailScreen(opportunity: Opportunity, onBack: () -> Unit) {
+fun ApplicationDetailScreen(
+    opportunity: Opportunity,
+    onBack: () -> Unit,
+    applied: Boolean = false,
+    onApply: () -> Unit = {},
+) {
     val T = LocalAppColors.current
 
     Column(
@@ -141,15 +147,24 @@ fun ApplicationDetailScreen(opportunity: Opportunity, onBack: () -> Unit) {
             Spacer(Modifier.height(28.dp))
 
             Button(
-                onClick = { /* TODO: conectar con backend FastAPI de postulaciones */ },
+                onClick = onApply,
+                enabled = !applied,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = T.coral,
+                    disabledContainerColor = T.green.copy(alpha = 0.18f),
+                    disabledContentColor = T.green,
+                ),
             ) {
+                if (applied) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                }
                 Text(
-                    "Postular ahora",
+                    if (applied) "Ya postulaste" else "Postular ahora",
                     fontFamily = SpaceGrotesk,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,

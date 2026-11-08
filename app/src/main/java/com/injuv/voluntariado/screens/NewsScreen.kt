@@ -30,7 +30,11 @@ import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 @Composable
-fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
+fun NewsScreen(
+    onShowAlert: () -> Unit,
+    onToggleMenu: () -> Unit,
+    onOpenDetail: (Int) -> Unit = {},
+) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todas") }
 
@@ -58,19 +62,24 @@ fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
         }
 
         items(filtered) { news ->
-            NewsCard(news, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            NewsCard(
+                news,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                onClick = { onOpenDetail(news.id) },
+            )
         }
     }
 }
 
 @Composable
-private fun NewsCard(news: NewsItem, modifier: Modifier = Modifier) {
+private fun NewsCard(news: NewsItem, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     val T = LocalAppColors.current
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient)),
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable(onClick = onClick),
     ) {
         AsyncImage(
             model = news.imageUrl,

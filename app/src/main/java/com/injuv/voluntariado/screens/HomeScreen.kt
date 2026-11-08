@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.injuv.voluntariado.components.AppScreenHeader
+import com.injuv.voluntariado.data.NewsItem
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
@@ -46,6 +47,8 @@ fun HomeScreen(
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
     userName: String = "Voluntario",
+    onOpenNews: () -> Unit = {},
+    onOpenNewsDetail: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
     val featured = SampleData.opportunities.take(2)
@@ -90,6 +93,41 @@ fun HomeScreen(
                         opportunity = opportunity,
                         onClick = { onOpenDetail(opportunity.id) },
                     )
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, start = 20.dp, end = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Últimas noticias",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = T.textPrimary,
+                )
+                Text(
+                    text = "Ver todas",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    color = T.coral,
+                    modifier = Modifier.clickable(onClick = onOpenNews),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                items(SampleData.news) { news ->
+                    NewsCarouselCard(news = news, onClick = { onOpenNewsDetail(news.id) })
                 }
             }
         }
@@ -148,6 +186,52 @@ private fun FeaturedOpportunityCard(opportunity: Opportunity, onClick: () -> Uni
                 fontFamily = Outfit,
                 fontSize = 11.sp,
                 color = T.coral,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NewsCarouselCard(news: NewsItem, onClick: () -> Unit) {
+    val T = LocalAppColors.current
+    Column(
+        modifier = Modifier
+            .width(230.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable(onClick = onClick),
+    ) {
+        AsyncImage(
+            model = news.imageUrl,
+            contentDescription = news.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(110.dp),
+        )
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                news.category.uppercase(),
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 10.sp,
+                color = T.coral,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                news.title,
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = T.textPrimary,
+                maxLines = 2,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "${news.date} · ${news.readTime}",
+                fontFamily = Outfit,
+                fontSize = 11.sp,
+                color = T.textSubtle,
             )
         }
     }
