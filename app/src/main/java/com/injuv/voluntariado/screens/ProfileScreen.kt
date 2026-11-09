@@ -72,6 +72,7 @@ fun ProfileScreen(
     onEditProfile: () -> Unit = {},
     profile: UserProfile = UserProfile(),
     extraApplied: List<AppliedProgram> = emptyList(),
+    onOpenForum: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
     var activeTab by remember { mutableStateOf(ProfileTab.EnCurso) }
@@ -276,7 +277,12 @@ fun ProfileScreen(
         if (profile.privacy.volunteerExperience) {
             when (activeTab) {
                 ProfileTab.EnCurso -> items(SampleData.activePrograms) { program ->
-                    ActiveProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))
+                    ActiveProgramCard(
+                        program,
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                            .clickable { onOpenForum(program.id) },
+                    )
                 }
                 ProfileTab.Postuladas -> items(SampleData.appliedPrograms + extraApplied) { program ->
                     AppliedProgramCard(program, modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp))

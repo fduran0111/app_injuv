@@ -104,6 +104,20 @@ data class Book(
     val coverUrl: String,
 )
 
+data class ForumChannel(
+    val programId: Int,
+    val title: String,
+    val org: String,
+    val lastMessage: String?,
+)
+
+data class ForumMessage(
+    val id: Int,
+    val author: String,
+    val text: String,
+    val date: String,
+)
+
 data class Skill(
     val name: String,
     val level: Int,

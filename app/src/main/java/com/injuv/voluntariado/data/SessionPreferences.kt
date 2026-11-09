@@ -35,11 +35,25 @@ class SessionPreferences(context: Context) {
         accounts.edit().putString(email.trim().lowercase(), name).apply()
     }
 
+    fun isTutor(): Boolean = prefs.getBoolean(KEY_TUTOR, false)
+
+    fun setTutor(isTutor: Boolean) {
+        prefs.edit().putBoolean(KEY_TUTOR, isTutor).apply()
+    }
+
+    fun tutorProgramId(): Int = prefs.getInt(KEY_TUTOR_PROGRAM, 0)
+
+    fun setTutorProgramId(id: Int) {
+        prefs.edit().putInt(KEY_TUTOR_PROGRAM, id).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "injuv_prefs"
         private const val ACCOUNTS_NAME = "injuv_accounts"
         private const val KEY_LOGGED_IN = "logged_in"
         private const val KEY_NAME = "user_name"
         private const val KEY_EMAIL = "user_email"
+        private const val KEY_TUTOR = "is_tutor"
+        private const val KEY_TUTOR_PROGRAM = "tutor_program_id"
     }
 }

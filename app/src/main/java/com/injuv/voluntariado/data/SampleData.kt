@@ -79,6 +79,17 @@ object SampleData {
         ActiveProgram(2, "Brigada de Salud", "MINSA Arequipa", 20, 16, 80, "15 Nov 2026"),
     )
 
+    val tutorRoster = listOf(
+        "María González",
+        "Jorge Castillo",
+        "Camila Rojas",
+        "Pedro Fuentes",
+        "Luciana Vargas",
+        "Diego Morales",
+        "Sofía Herrera",
+        "Andrés Paredes",
+    )
+
     val historyPrograms = listOf(
         HistoryProgram(3, "Reforestación Lima Norte", "SERNANP", 48, "2025", true, 5),
         HistoryProgram(4, "Alfabetización Básica", "MINEDU", 60, "2025", true, 5),

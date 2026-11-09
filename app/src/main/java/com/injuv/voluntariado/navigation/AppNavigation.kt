@@ -41,21 +41,29 @@ import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
 import com.injuv.voluntariado.data.ApplicationPreferences
 import com.injuv.voluntariado.data.AppliedProgram
+import com.injuv.voluntariado.data.AttendancePreferences
+import com.injuv.voluntariado.data.ForumChannel
+import com.injuv.voluntariado.data.ForumMessage
+import com.injuv.voluntariado.data.ForumPreferences
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.data.SessionPreferences
 import com.injuv.voluntariado.screens.AcademyScreen
 import com.injuv.voluntariado.screens.ApplicationDetailScreen
 import com.injuv.voluntariado.screens.ApplicationsScreen
+import com.injuv.voluntariado.screens.AttendanceScreen
 import com.injuv.voluntariado.screens.AuthScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
 import com.injuv.voluntariado.screens.EditProfileScreen
+import com.injuv.voluntariado.screens.ForumScreen
+import com.injuv.voluntariado.screens.ForumsScreen
 import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
 import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
+import com.injuv.voluntariado.screens.TutorDashboardScreen
 import com.injuv.voluntariado.screens.computeAgeYears
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -68,6 +76,8 @@ private val screensWithBottomNav = setOf(
     "documents",
     "academy",
     "library",
+    "tutor_home",
+    "forums",
 )
 
 private fun NavHostController.goTo(route: String) {
@@ -90,9 +100,20 @@ fun InjuvApp(
     val session = remember { SessionPreferences(context) }
     val profilePrefs = remember { ProfilePreferences(context) }
     val applicationPrefs = remember { ApplicationPreferences(context) }
+    val attendancePrefs = remember { AttendancePreferences(context) }
+    val forumPrefs = remember { ForumPreferences(context) }
     var loggedIn by remember { mutableStateOf(session.isLoggedIn()) }
     var userProfile by remember { mutableStateOf(profilePrefs.load(session.displayName(), session.email())) }
     var appliedIds by remember { mutableStateOf(applicationPrefs.appliedIds()) }
+    var isTutorMode by remember { mutableStateOf(session.isTutor()) }
+    var tutorProgramId by remember { mutableStateOf(session.tutorProgramId()) }
+    var presentTodayCount by remember {
+        mutableStateOf(
+            attendancePrefs.presentNames(
+                java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+            ).size
+        )
+    }
 
     if (!loggedIn) {
         AuthScreen(
@@ -143,6 +164,7 @@ fun InjuvApp(
             if (currentBaseRoute in screensWithBottomNav) {
                 BottomBar(
                     currentRoute = currentBaseRoute,
+                    isTutor = isTutorMode,
                     onNavigate = { route ->
                         menuOpen = false
                         navController.goTo(route)
@@ -220,6 +242,10 @@ fun InjuvApp(
                                 navController.navigate("edit_profile")
                             },
                             profile = userProfile,
+                            onOpenForum = { id ->
+                                menuOpen = false
+                                navController.navigate("forum/$id")
+                            },
                             extraApplied = SampleData.opportunities
                                 .filter { it.id in appliedIds }
                                 .map {
@@ -240,6 +266,46 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                             onNavigate = { route -> navController.navigate(route) },
                             onLogout = { logout() },
+                            isTutor = isTutorMode,
+                            onTutorChange = { enabled ->
+                                session.setTutor(enabled)
+                                isTutorMode = enabled
+                            },
+                            tutorProgramId = tutorProgramId,
+                            onTutorProgramChange = { id ->
+                                session.setTutorProgramId(id)
+                                tutorProgramId = id
+                            },
+                        )
+                    }
+                    composable("tutor_home") {
+                        val program = SampleData.opportunities.find { it.id == tutorProgramId }
+                            ?: SampleData.opportunities.first()
+                        TutorDashboardScreen(
+                            program = program,
+                            enrolledCount = SampleData.tutorRoster.size,
+                            presentToday = presentTodayCount,
+                            onAttendance = { navController.navigate("attendance") },
+                            onOpenForum = { navController.navigate("forum/$tutorProgramId") },
+                            onBack = { navController.popBackStack() },
+                            onOpenSettings = { navController.navigate("settings") },
+                        )
+                    }
+                    composable("attendance") {
+                        val program = SampleData.opportunities.find { it.id == tutorProgramId }
+                            ?: SampleData.opportunities.first()
+                        val todayKey = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+                        AttendanceScreen(
+                            programTitle = program.title,
+                            roster = SampleData.tutorRoster,
+                            initialDateKey = todayKey,
+                            loadPresent = { key -> attendancePrefs.presentNames(key) },
+                            savePresent = { key, names ->
+                                attendancePrefs.savePresent(key, names)
+                                if (key == todayKey) presentTodayCount = names.size
+                                navController.popBackStack()
+                            },
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable("edit_profile") {
@@ -254,6 +320,62 @@ fun InjuvApp(
                                 navController.popBackStack()
                             },
                             onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable(
+                        "forum/{programId}",
+                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val programId = entry.arguments?.getInt("programId") ?: 0
+                        val program = SampleData.opportunities.find { it.id == programId }
+                        val programTitle = program?.title ?: "Voluntariado"
+                        var messages by remember {
+                            mutableStateOf(
+                                forumPrefs.seedIfEmpty(
+                                    programId,
+                                    ForumMessage(
+                                        id = 1,
+                                        author = "Tutor",
+                                        text = "Bienvenidos al foro de anuncios de $programTitle. Aquí el tutor compartirá novedades y recordatorios.",
+                                        date = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale("es", "CL")).format(java.util.Date()),
+                                    ),
+                                ),
+                            )
+                        }
+                        ForumScreen(
+                            programTitle = programTitle,
+                            messages = messages,
+                            isTutor = isTutorMode,
+                            onSend = { text ->
+                                val message = ForumMessage(
+                                    id = (messages.maxOfOrNull { it.id } ?: 0) + 1,
+                                    author = session.displayName(),
+                                    text = text,
+                                    date = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale("es", "CL")).format(java.util.Date()),
+                                )
+                                forumPrefs.append(programId, message)
+                                messages = messages + message
+                            },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable("forums") {
+                        val channels = SampleData.activePrograms.map { program ->
+                            ForumChannel(
+                                program.id,
+                                program.title,
+                                program.org,
+                                forumPrefs.messages(program.id).lastOrNull()?.text,
+                            )
+                        }
+                        ForumsScreen(
+                            forums = channels,
+                            onOpenForum = { id ->
+                                menuOpen = false
+                                navController.navigate("forum/$id")
+                            },
+                            onShowAlert = onShowAlert,
+                            onToggleMenu = onToggleMenu,
                         )
                     }
                     composable("news") {
@@ -331,13 +453,15 @@ fun InjuvApp(
 }
 
 @Composable
-private fun BottomBar(currentRoute: String, onNavigate: (String) -> Unit) {
+private fun BottomBar(currentRoute: String, isTutor: Boolean, onNavigate: (String) -> Unit) {
     val T = LocalAppColors.current
     androidx.compose.material3.NavigationBar(
         containerColor = T.navBg,
         contentColor = T.navInactive,
     ) {
-        BottomNavItem.values().forEach { item ->
+        BottomNavItem.values()
+            .filter { it != BottomNavItem.Tutor || isTutor }
+            .forEach { item ->
             val isActive = item.route == currentRoute
             NavigationBarItem(
                 selected = isActive,

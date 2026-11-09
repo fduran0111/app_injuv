@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
@@ -39,6 +40,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.components.FilterChipsRow
+import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -50,6 +53,10 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
+    isTutor: Boolean = false,
+    onTutorChange: (Boolean) -> Unit = {},
+    tutorProgramId: Int = 0,
+    onTutorProgramChange: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
 
@@ -86,6 +93,73 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
+            Text(
+                "Rol",
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = T.textMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Groups, contentDescription = null, tint = T.coral)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text(
+                        "Tutor de voluntariado",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = T.textPrimary,
+                    )
+                    Text(
+                        if (isTutor) "Panel de tutor activado" else "Gestiona tu oportunidad",
+                        fontFamily = Outfit,
+                        fontSize = 12.sp,
+                        color = T.textMuted,
+                    )
+                }
+                Switch(
+                    checked = isTutor,
+                    onCheckedChange = onTutorChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = T.coral,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = T.textSubtle,
+                    ),
+                )
+            }
+            if (isTutor) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Tu oportunidad",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = T.textMuted,
+                )
+                Spacer(Modifier.height(8.dp))
+                val selectedProgram = SampleData.opportunities.find { it.id == tutorProgramId }
+                FilterChipsRow(
+                    options = SampleData.opportunities.map { it.title },
+                    selected = selectedProgram?.title ?: SampleData.opportunities.first().title,
+                    onSelect = { title ->
+                        SampleData.opportunities.find { it.title == title }?.let { onTutorProgramChange(it.id) }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(22.dp))
             Text(
                 "Cuenta",
                 fontFamily = SpaceGrotesk,
