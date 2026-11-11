@@ -25,11 +25,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.injuv.voluntariado.components.AppScreenHeader
 import com.injuv.voluntariado.components.FilterChipsRow
-import com.injuv.voluntariado.data.Opportunity
-import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.components.EstadoCarga
+import com.injuv.voluntariado.components.OportunidadImagen
+import com.injuv.voluntariado.components.Vacio
+import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Oportunidad
+import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -42,12 +46,12 @@ fun ApplicationsScreen(
 ) {
     val T = LocalAppColors.current
     var selectedCategory by remember { mutableStateOf("Todos") }
+    val carga = rememberCarga { ApiClient.call { oportunidades(limit = 200) } }
+    val todas = carga.datos.orEmpty()
+    // Las categorías salen del "área de voluntariado" de las oportunidades publicadas.
+    val categorias = listOf("Todos") + todas.map { it.tipo_de_voluntariado }.filter { it.isNotBlank() }.distinct().sorted()
 
-    val filtered = if (selectedCategory == "Todos") {
-        SampleData.opportunities
-    } else {
-        SampleData.opportunities.filter { it.tags.contains(selectedCategory) }
-    }
+    val filtered = if (selectedCategory == "Todos") todas else todas.filter { it.tipo_de_voluntariado == selectedCategory }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -56,12 +60,12 @@ fun ApplicationsScreen(
         item {
             AppScreenHeader(
                 title = "Postulaciones",
-                subtitle = "${filtered.size} oportunidades disponibles",
+                subtitle = if (carga.datos == null) "Cargando oportunidades…" else "${filtered.size} oportunidades disponibles",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
                 bottomContent = {
                     FilterChipsRow(
-                        options = SampleData.categories,
+                        options = categorias,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
@@ -69,7 +73,12 @@ fun ApplicationsScreen(
             )
         }
 
-        items(filtered) { opportunity ->
+        if (carga.datos == null) {
+            item { EstadoCarga(carga) {} }
+        } else if (filtered.isEmpty()) {
+            item { Vacio("No hay oportunidades en esta categoría", "Prueba con otra área o vuelve más tarde.") }
+        }
+        items(filtered, key = { it.id }) { opportunity ->
             OpportunityListCard(
                 opportunity = opportunity,
                 onClick = { onOpenDetail(opportunity.id) },
@@ -80,7 +89,7 @@ fun ApplicationsScreen(
 }
 
 @Composable
-private fun OpportunityListCard(opportunity: Opportunity, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun OpportunityListCard(opportunity: Oportunidad, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
     Row(
         modifier = modifier
@@ -90,10 +99,8 @@ private fun OpportunityListCard(opportunity: Opportunity, onClick: () -> Unit, m
             .clickable(onClick = onClick)
             .padding(12.dp),
     ) {
-        AsyncImage(
-            model = opportunity.imageUrl,
-            contentDescription = opportunity.title,
-            contentScale = ContentScale.Crop,
+        OportunidadImagen(
+            oportunidad = opportunity,
             modifier = Modifier
                 .size(84.dp)
                 .clip(RoundedCornerShape(12.dp)),
@@ -101,29 +108,29 @@ private fun OpportunityListCard(opportunity: Opportunity, onClick: () -> Unit, m
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                opportunity.title,
+                opportunity.titulo,
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 color = T.textPrimary,
                 maxLines = 1,
             )
-            Text(opportunity.org, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 1)
+            Text(opportunity.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 1)
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.LocationOn, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(3.dp))
-                Text(opportunity.location, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                Text(opportunity.ubicacion, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted, maxLines = 1, modifier = Modifier.weight(1f, fill = false))
                 Spacer(Modifier.width(10.dp))
                 Icon(Icons.Filled.People, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(3.dp))
-                Text("${opportunity.spots} cupos", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                Text(opportunity.cupo_maximo?.let { "$it cupos" } ?: "Cupo abierto", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
             }
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = T.coral, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(3.dp))
-                Text("Cierra: ${opportunity.deadline}", fontFamily = Outfit, fontSize = 11.sp, color = T.coral, fontWeight = FontWeight.Medium)
+                Text("Cierra: ${formatearFecha(opportunity.fecha_limite_postulacion, "sin fecha")}", fontFamily = Outfit, fontSize = 11.sp, color = T.coral, fontWeight = FontWeight.Medium)
             }
         }
     }

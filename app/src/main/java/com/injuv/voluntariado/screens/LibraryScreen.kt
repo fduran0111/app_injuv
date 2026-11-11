@@ -1,16 +1,19 @@
 package com.injuv.voluntariado.screens
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -24,26 +27,52 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.injuv.voluntariado.components.AppScreenHeader
+import com.injuv.voluntariado.components.EstadoCarga
 import com.injuv.voluntariado.components.FilterChipsRow
-import com.injuv.voluntariado.data.Book
-import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.components.Vacio
+import com.injuv.voluntariado.components.descargarArchivo
+import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Documento
+import com.injuv.voluntariado.data.api.anioDe
+import com.injuv.voluntariado.data.api.tipoArchivo
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
+private const val PREFS = "injuv_prefs"
+private const val KEY_GUARDADOS = "biblioteca_guardados"
+
+/*
+ * Biblioteca en grilla (GET /biblioteca/documentos). "Guardar" se almacena solo en el
+ * teléfono: el backend todavía no tiene favoritos por usuario.
+ */
 @Composable
 fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     val T = LocalAppColors.current
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    var guardados by remember { mutableStateOf(prefs.getStringSet(KEY_GUARDADOS, emptySet()).orEmpty()) }
     var selectedCategory by remember { mutableStateOf("Todos") }
+    val carga = rememberCarga { ApiClient.call { biblioteca() } }
+    val docs = carga.datos.orEmpty()
+    val categorias = listOf("Todos", "Guardados") + docs.mapNotNull { it.tematica_nombre?.ifBlank { null } }.distinct().sorted()
+    val filtered = when (selectedCategory) {
+        "Todos" -> docs
+        "Guardados" -> docs.filter { it.id.toString() in guardados }
+        else -> docs.filter { it.tematica_nombre == selectedCategory }
+    }
 
-    val filtered = if (selectedCategory == "Todos") SampleData.books
-    else SampleData.books.filter { it.category == selectedCategory }
+    fun alternar(doc: Documento) {
+        val id = doc.id.toString()
+        guardados = if (id in guardados) guardados - id else guardados + id
+        prefs.edit().putStringSet(KEY_GUARDADOS, guardados).apply()
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -54,15 +83,15 @@ fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(2) }) {
+        item(span = { GridItemSpan(2) }) {
             AppScreenHeader(
                 title = "Biblioteca",
-                subtitle = "Lecturas recomendadas sobre voluntariado",
+                subtitle = "Lecturas y materiales sobre voluntariado",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
                 bottomContent = {
                     FilterChipsRow(
-                        options = SampleData.bookCategories,
+                        options = categorias,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
                     )
@@ -70,52 +99,76 @@ fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
             )
         }
 
-        items(filtered) { book ->
-            BookCard(book, modifier = Modifier.padding(horizontal = 6.dp))
+        if (carga.datos == null) {
+            item(span = { GridItemSpan(2) }) { EstadoCarga(carga) {} }
+        } else if (filtered.isEmpty()) {
+            item(span = { GridItemSpan(2) }) {
+                Vacio(if (selectedCategory == "Guardados") "Aún no guardas documentos" else "No hay documentos en esta temática")
+            }
+        }
+        items(filtered, key = { it.id }) { doc ->
+            BookCard(
+                doc,
+                guardado = doc.id.toString() in guardados,
+                onGuardar = { alternar(doc) },
+                onAbrir = { descargarArchivo(context, ApiClient.descargaDocumento(doc), doc.nombre_archivo) },
+                modifier = Modifier.padding(horizontal = 6.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun BookCard(book: Book, modifier: Modifier = Modifier) {
+private fun BookCard(
+    doc: Documento,
+    guardado: Boolean,
+    onGuardar: () -> Unit,
+    onAbrir: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val T = LocalAppColors.current
-    var saved by remember { mutableStateOf(book.savedDefault) }
-
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable(onClick = onAbrir)
             .padding(10.dp),
     ) {
         Box {
-            AsyncImage(
-                model = book.coverUrl,
-                contentDescription = book.title,
-                contentScale = ContentScale.Crop,
+            // Portada: los documentos no traen imagen, se usa una portada con el tipo de archivo.
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(140.dp)
-                    .clip(RoundedCornerShape(10.dp)),
-            )
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Brush.linearGradient(listOf(T.blue.copy(alpha = 0.55f), T.coral.copy(alpha = 0.55f)))),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Filled.MenuBook, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
+                    Spacer(Modifier.height(6.dp))
+                    Text(tipoArchivo(doc.archivo_mime, doc.nombre_archivo), fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.White)
+                }
+            }
             IconButton(
-                onClick = { saved = !saved },
+                onClick = onGuardar,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .clip(androidx.compose.foundation.shape.CircleShape)
+                    .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.35f))
                     .size(30.dp),
             ) {
                 Icon(
-                    if (saved) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                    contentDescription = "Guardar",
-                    tint = if (saved) T.yellow else Color.White,
+                    if (guardado) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                    contentDescription = if (guardado) "Quitar de guardados" else "Guardar",
+                    tint = if (guardado) T.yellow else Color.White,
                 )
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(book.title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = T.textPrimary, maxLines = 2)
-        Text(book.author, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted, maxLines = 1)
+        Text(doc.nombre_archivo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = T.textPrimary, maxLines = 2)
+        Text(doc.autor.ifBlank { doc.tematica_nombre ?: "INJUV" }, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted, maxLines = 1)
         Spacer(Modifier.height(4.dp))
-        Text("${book.year} · ${book.pages}p.", fontFamily = Outfit, fontSize = 10.sp, color = T.textSubtle)
+        Text(anioDe(doc.fecha_edicion ?: doc.created_at), fontFamily = Outfit, fontSize = 10.sp, color = T.textSubtle)
     }
 }

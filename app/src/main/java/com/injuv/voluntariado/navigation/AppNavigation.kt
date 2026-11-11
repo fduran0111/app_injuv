@@ -16,6 +16,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +40,10 @@ import com.injuv.voluntariado.components.BottomNavItem
 import com.injuv.voluntariado.components.ResourcesMenuCard
 import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
-import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.PostulacionUsuario
+import com.injuv.voluntariado.data.api.SessionManager
+import com.injuv.voluntariado.screens.AuthScreen
 import com.injuv.voluntariado.screens.AcademyScreen
 import com.injuv.voluntariado.screens.ApplicationDetailScreen
 import com.injuv.voluntariado.screens.ApplicationsScreen
@@ -77,6 +82,26 @@ fun InjuvApp(
     isDarkTheme: Boolean,
     onDarkThemeChange: (Boolean) -> Unit,
 ) {
+    // Sin sesión se muestra el login; al iniciar sesión (o si el token expira) cambia solo.
+    val usuario by SessionManager.user.collectAsState()
+    if (usuario == null) {
+        AuthScreen()
+        return
+    }
+    LaunchedEffect(usuario?.id) { SessionManager.refrescar() }
+
+    // Aviso de cambios de estado: compara las postulaciones actuales con las últimas vistas.
+    var cambios by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
+    var postulaciones by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
+    LaunchedEffect(usuario?.id) {
+        runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
+            val conocidos = SessionManager.estadosConocidos()
+            postulaciones = lista
+            cambios = if (conocidos.isEmpty()) emptyList() else lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
+            if (conocidos.isEmpty()) SessionManager.guardarEstados(lista)
+        }
+    }
+
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: "home"
@@ -136,11 +161,9 @@ fun InjuvApp(
                         "application_detail/{id}",
                         arguments = listOf(navArgument("id") { type = NavType.IntType }),
                     ) { entry ->
-                        val id = entry.arguments?.getInt("id") ?: 1
-                        val opportunity = SampleData.opportunities.find { it.id == id }
-                            ?: SampleData.opportunities.first()
+                        val id = entry.arguments?.getInt("id") ?: 0
                         ApplicationDetailScreen(
-                            opportunity = opportunity,
+                            oportunidadId = id,
                             onBack = { navController.popBackStack() },
                         )
                     }
@@ -152,6 +175,7 @@ fun InjuvApp(
                                 navController.navigate("settings")
                             },
                             onToggleMenu = onToggleMenu,
+                            onOpenOportunidad = { id -> navController.navigate("application_detail/$id") },
                         )
                     }
                     composable("settings") {
@@ -159,6 +183,7 @@ fun InjuvApp(
                             isDarkTheme = isDarkTheme,
                             onDarkThemeChange = onDarkThemeChange,
                             onBack = { navController.popBackStack() },
+                            onLogout = { SessionManager.cerrarSesion() },
                         )
                     }
                     composable("news") {
@@ -212,7 +237,16 @@ fun InjuvApp(
     }
 
     if (showStatusAlert) {
-        StatusAlertSheet(onClose = { showStatusAlert = false })
+        StatusAlertSheet(
+            cambios = cambios,
+            postulaciones = postulaciones,
+            onClose = {
+                showStatusAlert = false
+                // Al ver el aviso, los estados actuales pasan a ser los "conocidos".
+                SessionManager.guardarEstados(postulaciones)
+                cambios = emptyList()
+            },
+        )
     }
 }
 

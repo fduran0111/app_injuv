@@ -1,10 +1,11 @@
 package com.injuv.voluntariado.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,27 +16,28 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.injuv.voluntariado.components.AppScreenHeader
-import com.injuv.voluntariado.components.FilterChipsRow
-import com.injuv.voluntariado.data.NewsItem
-import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.components.EstadoCarga
+import com.injuv.voluntariado.components.Vacio
+import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Noticia
+import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.data.api.minutosLectura
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
+/** Noticias publicadas (GET /noticias). Tocar una tarjeta muestra el contenido completo. */
 @Composable
 fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
-    val T = LocalAppColors.current
-    var selectedCategory by remember { mutableStateOf("Todas") }
-
-    val filtered = if (selectedCategory == "Todas") SampleData.news
-    else SampleData.news.filter { it.category == selectedCategory }
+    val carga = rememberCarga { ApiClient.call { noticias() } }
+    val noticias = carga.datos.orEmpty()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -47,42 +49,45 @@ fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
                 subtitle = "Novedades del programa de voluntariado",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
-                bottomContent = {
-                    FilterChipsRow(
-                        options = SampleData.newsCategories,
-                        selected = selectedCategory,
-                        onSelect = { selectedCategory = it },
-                    )
-                },
             )
         }
 
-        items(filtered) { news ->
-            NewsCard(news, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+        if (carga.datos == null) {
+            item { EstadoCarga(carga) {} }
+        } else if (noticias.isEmpty()) {
+            item { Vacio("Aún no hay noticias publicadas") }
+        }
+        itemsIndexed(noticias, key = { _, n -> n.id }) { index, news ->
+            NewsCard(news, destacada = index == 0, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
         }
     }
 }
 
 @Composable
-private fun NewsCard(news: NewsItem, modifier: Modifier = Modifier) {
+private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
+    var abierta by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient)),
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable { abierta = !abierta }
+            .animateContentSize(),
     ) {
-        AsyncImage(
-            model = news.imageUrl,
-            contentDescription = news.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (news.featured) 170.dp else 120.dp),
-        )
+        news.imagen?.let { archivo ->
+            AsyncImage(
+                model = ApiClient.imagenNoticia(archivo),
+                contentDescription = news.titulo,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (destacada) 170.dp else 120.dp),
+            )
+        }
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
-                news.category.uppercase(),
+                news.autor_nombre.uppercase(),
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 10.sp,
@@ -90,18 +95,27 @@ private fun NewsCard(news: NewsItem, modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                news.title,
+                news.titulo,
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = if (news.featured) 16.sp else 14.sp,
+                fontSize = if (destacada) 16.sp else 14.sp,
                 color = T.textPrimary,
             )
             Spacer(Modifier.height(4.dp))
-            Text(news.excerpt, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)
+            if (abierta) {
+                Text(news.contenido, fontFamily = Outfit, fontSize = 13.sp, lineHeight = 19.sp, color = T.textSecondary)
+            } else {
+                Text(news.resumen.ifBlank { news.contenido }, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)
+            }
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(news.date, fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
-                Text("${news.readTime} de lectura", fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
+                Text(formatearFecha(news.fecha_publicacion), fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
+                Text(
+                    if (abierta) "Toca para cerrar" else "${minutosLectura(news.contenido)} min de lectura",
+                    fontFamily = Outfit,
+                    fontSize = 11.sp,
+                    color = T.textSubtle,
+                )
             }
         }
     }

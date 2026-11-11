@@ -44,6 +44,7 @@ fun SettingsScreen(
     isDarkTheme: Boolean,
     onDarkThemeChange: (Boolean) -> Unit,
     onBack: () -> Unit,
+    onLogout: () -> Unit,
 ) {
     val T = LocalAppColors.current
 
@@ -152,6 +153,7 @@ fun SettingsScreen(
                 icon = Icons.AutoMirrored.Filled.Logout,
                 title = "Cerrar sesión",
                 subtitle = "Salir de la aplicación",
+                onClick = onLogout,
             )
         }
     }
@@ -162,6 +164,7 @@ private fun SettingsRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
+    onClick: () -> Unit = {}, // TODO: "Editar perfil" → pantalla que use PUT /usuarios/me
 ) {
     val T = LocalAppColors.current
     Row(
@@ -169,7 +172,7 @@ private fun SettingsRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.linearGradient(T.bgCardGradient))
-            .clickable { }
+            .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

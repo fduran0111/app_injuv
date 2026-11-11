@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.loadDarkThemePreference
 import com.injuv.voluntariado.data.saveDarkThemePreference
 import com.injuv.voluntariado.navigation.InjuvApp
@@ -17,6 +18,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        SessionManager.init(this)
         val initialDark = loadDarkThemePreference(this)
         setContent {
             var isDarkTheme by rememberSaveable { mutableStateOf(initialDark) }

@@ -32,10 +32,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import com.injuv.voluntariado.components.AppScreenHeader
-import com.injuv.voluntariado.data.Opportunity
-import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.components.EstadoCarga
+import com.injuv.voluntariado.components.OportunidadImagen
+import com.injuv.voluntariado.components.Vacio
+import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Oportunidad
+import com.injuv.voluntariado.data.api.SessionManager
+import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -47,7 +54,9 @@ fun HomeScreen(
     onToggleMenu: () -> Unit,
 ) {
     val T = LocalAppColors.current
-    val featured = SampleData.opportunities.take(2)
+    val usuario by SessionManager.user.collectAsState()
+    val stats = rememberCarga { ApiClient.call { estadisticas() } }
+    val oportunidades = rememberCarga { ApiClient.call { oportunidades(limit = 10) } }
 
     LazyColumn(
         modifier = Modifier
@@ -57,14 +66,16 @@ fun HomeScreen(
     ) {
         item {
             AppScreenHeader(
-                title = "Hola, Francisco 👋",
+                title = "Hola, ${usuario?.nombre?.ifBlank { null } ?: "voluntario/a"} 👋",
                 subtitle = "Encuentra tu próxima experiencia de voluntariado",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
             ) {
+                val e = stats.datos
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    StatPill(value = "10,000+", label = "Voluntarios", modifier = Modifier.weight(1f))
-                    StatPill(value = "140+", label = "Comunas", modifier = Modifier.weight(1f))
+                    StatPill(value = e?.voluntarios?.let { miles(it) } ?: "—", label = "Voluntarios", modifier = Modifier.weight(1f))
+                    StatPill(value = e?.oportunidades?.let { miles(it) } ?: "—", label = "Oportunidades", modifier = Modifier.weight(1f))
+                    StatPill(value = e?.horas?.let { miles(it) } ?: "—", label = "Horas", modifier = Modifier.weight(1f))
                 }
             }
         }
@@ -80,15 +91,21 @@ fun HomeScreen(
                 )
             }
             Spacer(Modifier.height(12.dp))
-            LazyRow(
-                contentPadding = PaddingValues(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-            ) {
-                items(featured) { opportunity ->
-                    FeaturedOpportunityCard(
-                        opportunity = opportunity,
-                        onClick = { onOpenDetail(opportunity.id) },
-                    )
+            EstadoCarga(oportunidades) { lista ->
+                if (lista.isEmpty()) {
+                    Vacio("No hay oportunidades abiertas", "Vuelve pronto: las organizaciones publican nuevas convocatorias seguido.")
+                } else {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        items(lista, key = { it.id }) { opportunity ->
+                            FeaturedOpportunityCard(
+                                opportunity = opportunity,
+                                onClick = { onOpenDetail(opportunity.id) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -109,7 +126,10 @@ private fun StatPill(value: String, label: String, modifier: Modifier = Modifier
 }
 
 @Composable
-private fun FeaturedOpportunityCard(opportunity: Opportunity, onClick: () -> Unit) {
+private fun miles(n: Int): String = "%,d".format(n).replace(',', '.')
+
+@Composable
+private fun FeaturedOpportunityCard(opportunity: Oportunidad, onClick: () -> Unit) {
     val T = LocalAppColors.current
     Column(
         modifier = Modifier
@@ -118,17 +138,15 @@ private fun FeaturedOpportunityCard(opportunity: Opportunity, onClick: () -> Uni
             .background(Brush.linearGradient(T.bgCardGradient))
             .clickable(onClick = onClick),
     ) {
-        AsyncImage(
-            model = opportunity.imageUrl,
-            contentDescription = opportunity.title,
-            contentScale = ContentScale.Crop,
+        OportunidadImagen(
+            oportunidad = opportunity,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(110.dp),
         )
         Column(modifier = Modifier.padding(14.dp)) {
             Text(
-                opportunity.title,
+                opportunity.titulo,
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
@@ -139,11 +157,15 @@ private fun FeaturedOpportunityCard(opportunity: Opportunity, onClick: () -> Uni
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.LocationOn, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(13.dp))
                 Spacer(Modifier.width(3.dp))
-                Text(opportunity.location, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                Text(opportunity.ubicacion, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 1)
             }
             Spacer(Modifier.height(8.dp))
             Text(
-                "${opportunity.hours}h · ${opportunity.spots} cupos",
+                listOfNotNull(
+                    opportunity.horas_voluntariado?.let { "${it}h" },
+                    opportunity.cupo_maximo?.let { "$it cupos" },
+                    opportunity.fecha_limite_postulacion?.let { "cierra ${formatearFecha(it)}" },
+                ).joinToString(" · ").ifBlank { opportunity.organizacion_nombre },
                 fontFamily = Outfit,
                 fontSize = 11.sp,
                 color = T.coral,
