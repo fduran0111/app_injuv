@@ -1,8 +1,8 @@
 package com.injuv.voluntariado.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +14,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material.icons.filled.VolunteerActivism
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,305 +44,456 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.R
 import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.ApiException
 import com.injuv.voluntariado.data.api.LoginBody
 import com.injuv.voluntariado.data.api.RegisterBody
 import com.injuv.voluntariado.data.api.SessionManager
-import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.data.api.limpiarRut
-import com.injuv.voluntariado.data.api.rutValido
+import kotlinx.coroutines.launch
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
-import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 
 /** Inicio de sesión y registro contra `/auth/login` y `/auth/register`. Al entrar, guarda el JWT. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AuthScreen() {
+fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Unit = { _, _ -> }) {
     val T = LocalAppColors.current
     val scope = rememberCoroutineScope()
-    var modoRegistro by rememberSaveable { mutableStateOf(false) }
-
-    var email by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
-    var nombre by rememberSaveable { mutableStateOf("") }
-    var apellido by rememberSaveable { mutableStateOf("") }
-    var rut by rememberSaveable { mutableStateOf("") }
-    var fechaNacimiento by rememberSaveable { mutableStateOf("") } // yyyy-MM-dd
-    var confirmar by rememberSaveable { mutableStateOf("") }
-    var verPassword by remember { mutableStateOf(false) }
-    var mostrarCalendario by remember { mutableStateOf(false) }
-
+    var loading by remember { mutableStateOf(false) }
+    var isLogin by remember { mutableStateOf(true) }
+    var name by remember { mutableStateOf("") }
+    var lastName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var rut by remember { mutableStateOf("") }
+    var birthMillis by remember { mutableStateOf<Long?>(null) }
+    var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var cargando by remember { mutableStateOf(false) }
 
-    fun validar(): String? {
-        if (!email.contains("@")) return "Ingresa un correo válido"
-        if (password.isBlank()) return "Ingresa tu contraseña"
-        if (!modoRegistro) return null
-        if (nombre.isBlank() || apellido.isBlank()) return "Ingresa tu nombre y apellido"
-        if (!rutValido(rut)) return "Revisa el RUT ingresado"
-        if (fechaNacimiento.isBlank()) return "Indica tu fecha de nacimiento"
-        if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres"
-        if (password != confirmar) return "Las contraseñas no coinciden"
-        return null
-    }
+    val fieldColors = OutlinedTextFieldDefaults.colors(
+        focusedBorderColor = T.coral,
+        unfocusedBorderColor = T.inputBorder,
+        focusedLabelColor = T.coral,
+        unfocusedLabelColor = T.textMuted,
+        cursorColor = T.coral,
+        focusedTextColor = T.textPrimary,
+        unfocusedTextColor = T.textPrimary,
+        focusedTrailingIconColor = T.textMuted,
+        unfocusedTrailingIconColor = T.textMuted,
+        focusedLeadingIconColor = T.coral,
+        unfocusedLeadingIconColor = T.textMuted,
+        focusedSupportingTextColor = T.textMuted,
+        unfocusedSupportingTextColor = T.textMuted,
+        focusedPlaceholderColor = T.textSubtle,
+        unfocusedPlaceholderColor = T.textSubtle,
+    )
 
-    fun enviar() {
-        error = validar()
-        if (error != null) return
-        cargando = true
-        scope.launch {
-            try {
-                val respuesta = ApiClient.call {
-                    if (modoRegistro) {
-                        register(
-                            RegisterBody(
-                                nombre = nombre.trim(),
-                                apellido = apellido.trim(),
-                                email = email.trim(),
-                                rut = limpiarRut(rut),
-                                fecha_nacimiento = fechaNacimiento,
-                                password = password,
-                            ),
-                        )
-                    } else {
-                        login(LoginBody(email.trim(), password))
-                    }
-                }
-                SessionManager.guardar(respuesta) // la navegación cambia sola al detectar el usuario
-            } catch (e: ApiException) {
-                error = e.message
-            } finally {
-                cargando = false
-            }
-        }
-    }
+    val birthText = birthMillis?.let { millis ->
+        SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            .apply { timeZone = TimeZone.getTimeZone("UTC") }
+            .format(Date(millis))
+    } ?: ""
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(T.bgBase)
-            .verticalScroll(rememberScrollState())
             .imePadding(),
     ) {
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Brush.linearGradient(T.bgHeaderGradient))
-                .statusBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 36.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column {
-                Box(
-                    modifier = Modifier
-                        .size(52.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Color.White.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(Icons.Filled.VolunteerActivism, contentDescription = null, tint = Color(0xFFFFD60A))
-                }
-                Spacer(Modifier.height(16.dp))
-                Text(
-                    if (modoRegistro) "Crea tu cuenta" else "Bienvenido/a",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 26.sp,
-                    color = Color.White,
-                )
-                Text(
-                    if (modoRegistro) "Únete a la red de voluntariado juvenil de Chile" else "Ingresa para postular y seguir tus voluntariados",
-                    fontFamily = Outfit,
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
+            Image(
+                painter = painterResource(R.drawable.ic_injuv_logo),
+                contentDescription = "INJUV",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(88.dp),
+                contentScale = ContentScale.Fit,
+            )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                if (isLogin) "INJUV Voluntariado" else "Crear cuenta",
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.Bold,
+                fontSize = 22.sp,
+                color = Color.White,
+            )
+            Text(
+                if (isLogin) "Ingresa para continuar" else "Regístrate para comenzar a participar",
+                fontFamily = Outfit,
+                fontSize = 13.sp,
+                color = Color.White.copy(alpha = 0.85f),
+            )
         }
 
         Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
         ) {
-            if (error != null) {
-                Text(
-                    error!!,
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = T.coral,
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(50))
+                    .background(T.surface1),
+            ) {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(T.coral.copy(alpha = 0.12f))
-                        .padding(12.dp),
-                )
-            }
-            if (modoRegistro) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Campo("Nombre", nombre, { nombre = it }, Modifier.weight(1f))
-                    Campo("Apellido", apellido, { apellido = it }, Modifier.weight(1f))
+                        .weight(1f)
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (isLogin) Brush.linearGradient(listOf(T.coral, T.coralDark))
+                            else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                        )
+                        .clickable { isLogin = true; error = null }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Iniciar sesión",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = if (isLogin) FontWeight.SemiBold else FontWeight.Medium,
+                        fontSize = 13.sp,
+                        color = if (isLogin) Color.White else T.textMuted,
+                    )
                 }
-                Campo("RUT", rut, { rut = it }, placeholder = "12.345.678-9")
-                // Fecha de nacimiento con calendario (el campo no se escribe a mano)
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (!isLogin) Brush.linearGradient(listOf(T.coral, T.coralDark))
+                            else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
+                        )
+                        .clickable { isLogin = false; error = null }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "Crear cuenta",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = if (!isLogin) FontWeight.SemiBold else FontWeight.Medium,
+                        fontSize = 13.sp,
+                        color = if (!isLogin) Color.White else T.textMuted,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(22.dp))
+
+            if (!isLogin) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it; error = null },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Nombre") },
+                        placeholder = { Text("Tu nombre") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = fieldColors,
+                    )
+                    OutlinedTextField(
+                        value = lastName,
+                        onValueChange = { lastName = it; error = null },
+                        modifier = Modifier.weight(1f),
+                        label = { Text("Apellido") },
+                        placeholder = { Text("Tu apellido") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = fieldColors,
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+            }
+
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it; error = null },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Correo electrónico") },
+                placeholder = { Text("tunombre@dominio.cl") },
+                leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                shape = RoundedCornerShape(14.dp),
+                colors = fieldColors,
+            )
+            Spacer(Modifier.height(12.dp))
+
+            if (!isLogin) {
+                OutlinedTextField(
+                    value = rut,
+                    onValueChange = { rut = it; error = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("RUT") },
+                    placeholder = { Text("12345678-9") },
+                    leadingIcon = { Icon(Icons.Filled.Badge, contentDescription = null) },
+                    supportingText = { Text("Formato: 12345678-9 (con guion y dígito verificador)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = fieldColors,
+                )
+                Spacer(Modifier.height(12.dp))
+
                 Box {
-                    Campo(
-                        "Fecha de nacimiento",
-                        if (fechaNacimiento.isBlank()) "" else formatearFecha(fechaNacimiento),
-                        {},
+                    OutlinedTextField(
+                        value = birthText,
+                        onValueChange = {},
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Fecha de nacimiento") },
+                        placeholder = { Text("dd-mm-aaaa") },
+                        trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = null) },
+                        supportingText = { Text("Debes tener al menos 15 años para registrarte.") },
                         readOnly = true,
-                        placeholder = "Toca para elegir",
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = fieldColors,
                     )
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { mostrarCalendario = true },
+                            .clickable { showDatePicker = true },
                     )
                 }
+                Spacer(Modifier.height(12.dp))
             }
-            Campo("Correo electrónico", email, { email = it }, keyboardType = KeyboardType.Email)
-            Campo(
-                "Contraseña",
-                password,
-                { password = it },
-                keyboardType = KeyboardType.Password,
-                oculto = !verPassword,
-                trailing = {
-                    IconButton(onClick = { verPassword = !verPassword }) {
+
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it; error = null },
+                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Contraseña") },
+                placeholder = { Text(if (isLogin) "Tu contraseña" else "Mínimo 8 caracteres") },
+                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
-                            if (verPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = if (verPassword) "Ocultar contraseña" else "Mostrar contraseña",
-                            tint = T.textMuted,
+                            if (showPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                            contentDescription = if (showPassword) "Ocultar" else "Mostrar",
                         )
                     }
                 },
+                supportingText = if (!isLogin) ({ Text("Mínimo 8 caracteres.") }) else null,
+                singleLine = true,
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                shape = RoundedCornerShape(14.dp),
+                colors = fieldColors,
             )
-            if (modoRegistro) {
-                Campo("Confirmar contraseña", confirmar, { confirmar = it }, keyboardType = KeyboardType.Password, oculto = !verPassword)
-                Text("Mínimo 8 caracteres. Debes tener al menos 15 años.", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+
+            if (!isLogin) {
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = confirm,
+                    onValueChange = { confirm = it; error = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Confirmar contraseña") },
+                    placeholder = { Text("Repite tu contraseña") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
+                    singleLine = true,
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = fieldColors,
+                )
             }
 
-            Spacer(Modifier.height(4.dp))
+            if (error != null) {
+                Spacer(Modifier.height(10.dp))
+                Text(error!!, fontFamily = Outfit, fontSize = 13.sp, color = T.coral)
+            }
+
+            Spacer(Modifier.height(22.dp))
+
             Button(
-                onClick = ::enviar,
-                enabled = !cargando,
+                onClick = {
+                    val result = validateAuth(isLogin, name, lastName, email, rut, birthMillis, password, confirm)
+                    if (result != null) {
+                        error = result
+                        return@Button
+                    }
+                    loading = true
+                    scope.launch {
+                        try {
+                            val respuesta = ApiClient.call {
+                                if (isLogin) {
+                                    login(LoginBody(email.trim(), password))
+                                } else {
+                                    register(
+                                        RegisterBody(
+                                            nombre = name.trim(),
+                                            apellido = lastName.trim(),
+                                            email = email.trim(),
+                                            rut = limpiarRut(rut),
+                                            fecha_nacimiento = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+                                                .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                                                .format(Date(birthMillis!!)),
+                                            password = password,
+                                        ),
+                                    )
+                                }
+                            }
+                            SessionManager.guardar(respuesta)
+                            onAuthenticated(respuesta.user, if (isLogin) null else birthMillis)
+                        } catch (e: ApiException) {
+                            error = e.message
+                        } finally {
+                            loading = false
+                        }
+                    }
+                },
+                enabled = !loading,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                colors = ButtonDefaults.buttonColors(containerColor = T.coral, contentColor = Color.White),
             ) {
-                if (cargando) {
+                if (loading) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
                 } else {
                     Text(
-                        if (modoRegistro) "Crear cuenta" else "Iniciar sesión",
+                        if (isLogin) "Entrar" else "Registrarse",
                         fontFamily = SpaceGrotesk,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
+                        fontSize = 16.sp,
                     )
                 }
             }
-            TextButton(
-                onClick = {
-                    modoRegistro = !modoRegistro
-                    error = null
-                },
-                modifier = Modifier.align(Alignment.CenterHorizontally),
-            ) {
-                Text(
-                    if (modoRegistro) "¿Ya tienes cuenta? Inicia sesión" else "¿No tienes cuenta? Regístrate gratis",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = T.coral,
-                )
-            }
-            if (cargando) {
+            if (loading) {
                 Text(
                     "Si el servidor estaba inactivo, la primera conexión puede tardar hasta un minuto.",
                     fontFamily = Outfit,
                     fontSize = 11.sp,
                     color = T.textSubtle,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 8.dp),
+                )
+            }
+
+            TextButton(
+                onClick = { isLogin = !isLogin; error = null },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            ) {
+                Text(
+                    if (isLogin) "¿No tienes una cuenta? Regístrate aquí" else "¿Ya tienes una cuenta? Inicia sesión aquí",
+                    fontFamily = Outfit,
+                    fontSize = 13.sp,
+                    color = T.blue,
                 )
             }
         }
     }
 
-    if (mostrarCalendario) {
-        val pickerState = rememberDatePickerState()
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = birthMillis)
         DatePickerDialog(
-            onDismissRequest = { mostrarCalendario = false },
+            onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        val c = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = millis }
-                        fechaNacimiento = "%04d-%02d-%02d".format(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
-                    }
-                    mostrarCalendario = false
+                    birthMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    error = null
                 }) { Text("Aceptar") }
             },
-            dismissButton = { TextButton(onClick = { mostrarCalendario = false }) { Text("Cancelar") } },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            },
         ) {
-            DatePicker(state = pickerState)
+            DatePicker(state = datePickerState)
         }
     }
 }
 
-@Composable
-private fun Campo(
-    label: String,
-    value: String,
-    onChange: (String) -> Unit,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    keyboardType: KeyboardType = KeyboardType.Text,
-    oculto: Boolean = false,
-    readOnly: Boolean = false,
-    placeholder: String? = null,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    val T = LocalAppColors.current
-    OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        label = { Text(label, fontFamily = Outfit) },
-        placeholder = placeholder?.let { { Text(it, fontFamily = Outfit, color = T.textSubtle) } },
-        singleLine = true,
-        readOnly = readOnly,
-        visualTransformation = if (oculto) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        trailingIcon = trailing,
-        shape = RoundedCornerShape(14.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = T.textPrimary,
-            unfocusedTextColor = T.textPrimary,
-            focusedContainerColor = T.inputBg,
-            unfocusedContainerColor = T.inputBg,
-            focusedBorderColor = T.coral,
-            unfocusedBorderColor = T.inputBorder,
-            focusedLabelColor = T.coral,
-            unfocusedLabelColor = T.textMuted,
-            cursorColor = T.coral,
-        ),
-        modifier = modifier,
-    )
+private fun validateAuth(
+    isLogin: Boolean,
+    name: String,
+    lastName: String,
+    email: String,
+    rut: String,
+    birthMillis: Long?,
+    password: String,
+    confirm: String,
+): String? {
+    if (!isLogin) {
+        if (name.isBlank()) return "Escribe tu nombre"
+        if (lastName.isBlank()) return "Escribe tu apellido"
+    }
+    if (email.isBlank() || !email.contains("@")) return "Ingresa un correo válido"
+    if (isLogin) {
+        if (password.isBlank()) return "Ingresa tu contraseña"
+    } else {
+        if (!isValidRut(rut)) return "Ingresa un RUT válido (ej: 12345678-9)"
+        if (birthMillis == null) return "Selecciona tu fecha de nacimiento"
+        if (computeAgeYears(birthMillis) < 15) return "Debes tener al menos 15 años para registrarte"
+        if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres"
+        if (password != confirm) return "Las contraseñas no coinciden"
+    }
+    return null
+}
+
+/** Valida un RUT chileno con dígito verificador (módulo 11). Acepta formato "12345678-9". */
+private fun isValidRut(rut: String): Boolean {
+    val match = Regex("^(\\d{1,8})-([0-9kK])$").find(rut.trim().replace(".", "")) ?: return false
+    val body = match.groupValues[1]
+    val dv = match.groupValues[2].first().uppercaseChar()
+    var sum = 0
+    var mul = 2
+    for (c in body.reversed()) {
+        sum += (c - '0') * mul
+        mul = if (mul == 7) 2 else mul + 1
+    }
+    return when (val expected = 11 - sum % 11) {
+        11 -> dv == '0'
+        10 -> dv == 'K'
+        else -> dv == '0' + expected
+    }
+}
+
+/** Edad en años cumplidos para un timestamp UTC a medianoche (como entrega DatePicker). */
+fun computeAgeYears(birthMillis: Long): Int {
+    val dob = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = birthMillis }
+    val now = Calendar.getInstance()
+    var age = now.get(Calendar.YEAR) - dob.get(Calendar.YEAR)
+    if (now.get(Calendar.MONTH) < dob.get(Calendar.MONTH) ||
+        (now.get(Calendar.MONTH) == dob.get(Calendar.MONTH) &&
+            now.get(Calendar.DAY_OF_MONTH) < dob.get(Calendar.DAY_OF_MONTH))
+    ) {
+        age--
+    }
+    return age
 }

@@ -39,10 +39,13 @@ import com.injuv.voluntariado.components.EstadoCarga
 import com.injuv.voluntariado.components.OportunidadImagen
 import com.injuv.voluntariado.components.Vacio
 import com.injuv.voluntariado.components.rememberCarga
+import coil.compose.AsyncImage
 import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Noticia
 import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.data.api.minutosLectura
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -52,11 +55,15 @@ fun HomeScreen(
     onOpenDetail: (Int) -> Unit,
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
+    userName: String = "Voluntario",
+    onOpenNews: () -> Unit = {},
+    onOpenNewsDetail: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
     val usuario by SessionManager.user.collectAsState()
     val stats = rememberCarga { ApiClient.call { estadisticas() } }
     val oportunidades = rememberCarga { ApiClient.call { oportunidades(limit = 10) } }
+    val noticias = rememberCarga { ApiClient.call { noticias(limit = 6) } }
 
     LazyColumn(
         modifier = Modifier
@@ -104,6 +111,47 @@ fun HomeScreen(
                                 opportunity = opportunity,
                                 onClick = { onOpenDetail(opportunity.id) },
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, start = 20.dp, end = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Últimas noticias",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    color = T.textPrimary,
+                )
+                Text(
+                    text = "Ver todas",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    color = T.coral,
+                    modifier = Modifier.clickable(onClick = onOpenNews),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            EstadoCarga(noticias) { lista ->
+                if (lista.isEmpty()) {
+                    Vacio("Aún no hay noticias publicadas")
+                } else {
+                    LazyRow(
+                        contentPadding = PaddingValues(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    ) {
+                        items(lista, key = { it.id }) { news ->
+                            NewsCarouselCard(news = news, onClick = { onOpenNewsDetail(news.id) })
                         }
                     }
                 }
@@ -169,6 +217,61 @@ private fun FeaturedOpportunityCard(opportunity: Oportunidad, onClick: () -> Uni
                 fontFamily = Outfit,
                 fontSize = 11.sp,
                 color = T.coral,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NewsCarouselCard(news: Noticia, onClick: () -> Unit) {
+    val T = LocalAppColors.current
+    Column(
+        modifier = Modifier
+            .width(230.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .clickable(onClick = onClick),
+    ) {
+        if (news.imagen != null) {
+            AsyncImage(
+                model = ApiClient.imagenNoticia(news.imagen),
+                contentDescription = news.titulo,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp),
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .background(Brush.linearGradient(listOf(T.coral.copy(alpha = 0.85f), T.coralDark))),
+            )
+        }
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(
+                news.autor_nombre.uppercase(),
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 10.sp,
+                color = T.coral,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                news.titulo,
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                color = T.textPrimary,
+                maxLines = 2,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "${formatearFecha(news.fecha_publicacion)} · ${minutosLectura(news.contenido)} min",
+                fontFamily = Outfit,
+                fontSize = 11.sp,
+                color = T.textSubtle,
             )
         }
     }

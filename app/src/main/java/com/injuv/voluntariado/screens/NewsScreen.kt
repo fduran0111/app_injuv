@@ -1,6 +1,5 @@
 package com.injuv.voluntariado.screens
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -9,10 +8,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -33,9 +28,13 @@ import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
-/** Noticias publicadas (GET /noticias). Tocar una tarjeta muestra el contenido completo. */
+/** Noticias publicadas (GET /noticias). Tocar una tarjeta abre el detalle. */
 @Composable
-fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
+fun NewsScreen(
+    onShowAlert: () -> Unit,
+    onToggleMenu: () -> Unit,
+    onOpenDetail: (Int) -> Unit = {},
+) {
     val carga = rememberCarga { ApiClient.call { noticias() } }
     val noticias = carga.datos.orEmpty()
 
@@ -58,22 +57,25 @@ fun NewsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
             item { Vacio("Aún no hay noticias publicadas") }
         }
         itemsIndexed(noticias, key = { _, n -> n.id }) { index, news ->
-            NewsCard(news, destacada = index == 0, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            NewsCard(
+                news,
+                destacada = index == 0,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+                onClick = { onOpenDetail(news.id) },
+            )
         }
     }
 }
 
 @Composable
-private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Modifier) {
+private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
     val T = LocalAppColors.current
-    var abierta by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(Brush.linearGradient(T.bgCardGradient))
-            .clickable { abierta = !abierta }
-            .animateContentSize(),
+            .clickable(onClick = onClick),
     ) {
         news.imagen?.let { archivo ->
             AsyncImage(
@@ -102,16 +104,12 @@ private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Mod
                 color = T.textPrimary,
             )
             Spacer(Modifier.height(4.dp))
-            if (abierta) {
-                Text(news.contenido, fontFamily = Outfit, fontSize = 13.sp, lineHeight = 19.sp, color = T.textSecondary)
-            } else {
-                Text(news.resumen.ifBlank { news.contenido }, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)
-            }
+            Text(news.resumen.ifBlank { news.contenido }, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)
             Spacer(Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(formatearFecha(news.fecha_publicacion), fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
                 Text(
-                    if (abierta) "Toca para cerrar" else "${minutosLectura(news.contenido)} min de lectura",
+                    "${minutosLectura(news.contenido)} min de lectura",
                     fontFamily = Outfit,
                     fontSize = 11.sp,
                     color = T.textSubtle,

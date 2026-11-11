@@ -15,11 +15,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Switch
@@ -35,6 +40,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.components.FilterChipsRow
+import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -44,7 +51,12 @@ fun SettingsScreen(
     isDarkTheme: Boolean,
     onDarkThemeChange: (Boolean) -> Unit,
     onBack: () -> Unit,
-    onLogout: () -> Unit,
+    onNavigate: (String) -> Unit = {},
+    onLogout: () -> Unit = {},
+    isTutor: Boolean = false,
+    onTutorChange: (Boolean) -> Unit = {},
+    tutorProgramId: Int = 0,
+    onTutorProgramChange: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
 
@@ -82,6 +94,73 @@ fun SettingsScreen(
                 .padding(20.dp),
         ) {
             Text(
+                "Rol",
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = T.textMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Groups, contentDescription = null, tint = T.coral)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text(
+                        "Tutor de voluntariado",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = T.textPrimary,
+                    )
+                    Text(
+                        if (isTutor) "Panel de tutor activado" else "Gestiona tu oportunidad",
+                        fontFamily = Outfit,
+                        fontSize = 12.sp,
+                        color = T.textMuted,
+                    )
+                }
+                Switch(
+                    checked = isTutor,
+                    onCheckedChange = onTutorChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = T.coral,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = T.textSubtle,
+                    ),
+                )
+            }
+            if (isTutor) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Tu oportunidad",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = T.textMuted,
+                )
+                Spacer(Modifier.height(8.dp))
+                val selectedProgram = SampleData.opportunities.find { it.id == tutorProgramId }
+                FilterChipsRow(
+                    options = SampleData.opportunities.map { it.title },
+                    selected = selectedProgram?.title ?: SampleData.opportunities.first().title,
+                    onSelect = { title ->
+                        SampleData.opportunities.find { it.title == title }?.let { onTutorProgramChange(it.id) }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(22.dp))
+            Text(
                 "Cuenta",
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
@@ -92,7 +171,26 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Filled.Edit,
                 title = "Editar perfil",
-                subtitle = "Datos personales y contacto",
+                subtitle = "Foto, contacto, habilidades y privacidad",
+                onClick = { onNavigate("edit_profile") },
+            )
+            Spacer(Modifier.height(10.dp))
+            SettingsRow(
+                icon = Icons.Filled.WorkspacePremium,
+                title = "Mis certificados",
+                subtitle = "4 certificados disponibles",
+            )
+            Spacer(Modifier.height(10.dp))
+            SettingsRow(
+                icon = Icons.Filled.Notifications,
+                title = "Notificaciones",
+                subtitle = "Alertas de postulaciones",
+            )
+            Spacer(Modifier.height(10.dp))
+            SettingsRow(
+                icon = Icons.AutoMirrored.Filled.HelpOutline,
+                title = "Ayuda",
+                subtitle = "Preguntas frecuentes",
             )
 
             Spacer(Modifier.height(22.dp))
@@ -149,6 +247,45 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(22.dp))
+            Text(
+                "Acerca de",
+                fontFamily = SpaceGrotesk,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = T.textMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Info, contentDescription = null, tint = T.coral, modifier = Modifier.size(22.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text(
+                        "INJUV Voluntariado",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = T.textPrimary,
+                    )
+                    Text(
+                        "Versión 1.0",
+                        fontFamily = Outfit,
+                        fontSize = 12.sp,
+                        color = T.textMuted,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(22.dp))
             SettingsRow(
                 icon = Icons.AutoMirrored.Filled.Logout,
                 title = "Cerrar sesión",
@@ -164,7 +301,7 @@ private fun SettingsRow(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: () -> Unit = {}, // TODO: "Editar perfil" → pantalla que use PUT /usuarios/me
+    onClick: () -> Unit = {},
 ) {
     val T = LocalAppColors.current
     Row(

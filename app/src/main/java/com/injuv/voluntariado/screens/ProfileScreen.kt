@@ -22,11 +22,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,7 +52,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -55,6 +65,7 @@ import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.components.Vacio
 import com.injuv.voluntariado.components.descargarArchivo
 import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.UserProfile
 import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.ApiException
 import com.injuv.voluntariado.data.api.ConfirmacionBody
@@ -66,6 +77,7 @@ import com.injuv.voluntariado.data.api.formatearHoras
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.bannerPresets
 import kotlinx.coroutines.launch
 
 private enum class ProfileTab { EnCurso, Postuladas, Terminadas }
@@ -82,6 +94,9 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit,
     onToggleMenu: () -> Unit,
     onOpenOportunidad: (Int) -> Unit,
+    onEditProfile: () -> Unit = {},
+    profile: UserProfile = UserProfile(),
+    onOpenForum: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
     val context = LocalContext.current
@@ -106,6 +121,12 @@ fun ProfileScreen(
             }
         }
     }
+    val displayName = usuario?.nombreCompleto?.ifBlank { null } ?: profile.name.ifBlank { "Voluntario" }
+    val bannerGradient = if (profile.bannerIndex in 1..bannerPresets.size) {
+        bannerPresets[profile.bannerIndex - 1]
+    } else {
+        T.bgHeaderGradient
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -115,7 +136,7 @@ fun ProfileScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
+                    .background(Brush.linearGradient(bannerGradient))
                     .padding(horizontal = 12.dp, vertical = 16.dp),
             ) {
                 Row(
@@ -136,24 +157,35 @@ fun ProfileScreen(
                                 .background(Color.White.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                u?.nombre?.take(1)?.uppercase() ?: "?",
-                                fontFamily = SpaceGrotesk,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 28.sp,
-                                color = Color.White,
-                            )
-                            if (u?.tiene_foto == true) {
+                            if (profile.photoUri != null) {
                                 AsyncImage(
-                                    model = ApiClient.fotoUsuario(u.id, u.foto_version),
+                                    model = android.net.Uri.parse(profile.photoUri),
                                     contentDescription = "Foto de perfil",
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
                                     contentScale = ContentScale.Crop,
-                                    modifier = Modifier.matchParentSize(),
                                 )
+                            } else {
+                                Text(
+                                    displayName.first().uppercase(),
+                                    fontFamily = SpaceGrotesk,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 28.sp,
+                                    color = Color.White,
+                                )
+                                if (u?.tiene_foto == true) {
+                                    AsyncImage(
+                                        model = ApiClient.fotoUsuario(u.id, u.foto_version),
+                                        contentDescription = "Foto de perfil",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.matchParentSize(),
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(10.dp))
-                        Text(u?.nombreCompleto ?: "", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
+                        Text(displayName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                         Text(
                             listOfNotNull(
                                 anioDe(u?.created_at).ifBlank { null }?.let { "Voluntario/a desde $it" },
@@ -163,6 +195,14 @@ fun ProfileScreen(
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.8f),
                         )
+                        if (profile.privacy.age && profile.age.isNotBlank()) {
+                            Text(
+                                "${profile.age} años",
+                                fontFamily = Outfit,
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.8f),
+                            )
+                        }
                         // Insignia de la organización a la que pertenece (si es admin o miembro de una)
                         u?.organizacion?.let { org ->
                             Spacer(Modifier.height(8.dp))
@@ -189,6 +229,30 @@ fun ProfileScreen(
                             ProfileStat("${postuladas.size}", "Postuladas")
                             ProfileStat("${terminadas.size}", "Terminadas")
                         }
+                        Spacer(Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(Color.White.copy(alpha = 0.18f))
+                                .clickable(onClick = onEditProfile)
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Filled.Edit,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(13.dp),
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                "Editar perfil",
+                                fontFamily = SpaceGrotesk,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                color = Color.White,
+                            )
+                        }
                     }
                     Column {
                         NotificationIconButton(onClick = onShowAlert)
@@ -201,6 +265,61 @@ fun ProfileScreen(
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = Color.White)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        val locationText = listOf(profile.commune, profile.city, profile.region)
+            .filter { it.isNotBlank() }
+            .joinToString(", ")
+        val showEmail = profile.privacy.email && profile.email.isNotBlank()
+        val showPhone = profile.privacy.phone && profile.phone.isNotBlank()
+        val showLocation = profile.privacy.location && locationText.isNotBlank()
+
+        if (showEmail || showPhone || showLocation) {
+            item {
+                ProfileInfoCard("Información de Contacto") {
+                    if (showEmail) ContactRow(Icons.Filled.Email, profile.email)
+                    if (showPhone) ContactRow(Icons.Filled.Phone, profile.phone)
+                    if (showLocation) ContactRow(Icons.Filled.LocationOn, locationText)
+                }
+            }
+        }
+
+        if (profile.privacy.aboutMe && profile.about.isNotBlank()) {
+            item {
+                ProfileInfoCard("Acerca de mí") {
+                    Text(profile.about, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                }
+            }
+        }
+
+        if (profile.privacy.skills && profile.skills.any { it.name.isNotBlank() }) {
+            item {
+                ProfileInfoCard("Habilidades") {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        profile.skills.filter { it.name.isNotBlank() }.forEach { skill ->
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Text(skill.name, fontFamily = Outfit, fontSize = 12.sp, color = T.textSecondary)
+                                    Text("${skill.level}%", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                LinearProgressIndicator(
+                                    progress = { skill.level / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(5.dp)
+                                        .clip(RoundedCornerShape(50)),
+                                    color = T.blue,
+                                    trackColor = T.progressTrack,
+                                )
                             }
                         }
                     }
@@ -237,7 +356,20 @@ fun ProfileScreen(
             Spacer(Modifier.height(8.dp))
         }
 
-        if (carga.datos == null) {
+        if (!profile.privacy.volunteerExperience) {
+            item {
+                Text(
+                    "Tu historial de voluntariados está oculto.",
+                    fontFamily = Outfit,
+                    fontSize = 13.sp,
+                    color = T.textMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp),
+                )
+            }
+        } else if (carga.datos == null) {
             item { EstadoCarga(carga) {} }
         } else {
             val lista = when (activeTab) {
@@ -263,6 +395,7 @@ fun ProfileScreen(
                     ProfileTab.EnCurso -> ActiveProgramCard(
                         p,
                         onAbrir = { onOpenOportunidad(p.oportunidad_id) },
+                        onForo = { onOpenForum(p.oportunidad_id) },
                         onConfirmar = { confirmado ->
                             accion(if (confirmado) "Participación confirmada" else "Avisamos a la organización que no participarás") {
                                 ApiClient.call { confirmar(p.id, ConfirmacionBody(if (confirmado) "Confirmado" else "No confirmado")) }
@@ -286,6 +419,49 @@ fun ProfileScreen(
                 }
             }
         }
+
+        if (profile.privacy.reviews) {
+            item {
+                ProfileInfoCard(
+                    title = "Reseñas y Referencias",
+                    icon = Icons.Filled.Star,
+                    iconTint = T.yellow,
+                ) {
+                    Text(
+                        "Aún no tienes reseñas públicas de organizaciones.",
+                        fontFamily = Outfit,
+                        fontSize = 13.sp,
+                        color = T.textMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        item {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .clickable { }
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = null, tint = T.coral, modifier = Modifier.size(22.dp))
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text("Centro de ayuda", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                    Text("Preguntas frecuentes y soporte", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                }
+            }
+        }
     }
 
     retirando?.let { p ->
@@ -301,6 +477,49 @@ fun ProfileScreen(
             },
             dismissButton = { TextButton(onClick = { retirando = null }) { Text("Cancelar") } },
         )
+    }
+}
+
+@Composable
+private fun ProfileInfoCard(
+    title: String,
+    icon: ImageVector? = null,
+    iconTint: Color? = null,
+    content: @Composable () -> Unit,
+) {
+    val T = LocalAppColors.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.linearGradient(T.bgCardGradient))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = iconTint ?: T.coral,
+                    modifier = Modifier.size(16.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+            }
+            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary)
+        }
+        content()
+    }
+}
+
+@Composable
+private fun ContactRow(icon: ImageVector, value: String) {
+    val T = LocalAppColors.current
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(value, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
     }
 }
 
@@ -337,6 +556,7 @@ private fun ProfileTabChip(label: String, isSelected: Boolean, modifier: Modifie
 private fun ActiveProgramCard(
     p: PostulacionUsuario,
     onAbrir: () -> Unit,
+    onForo: () -> Unit,
     onConfirmar: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -363,6 +583,9 @@ private fun ActiveProgramCard(
             fontSize = 11.sp,
             color = T.textMuted,
         )
+        TextButton(onClick = onForo, contentPadding = PaddingValues(0.dp)) {
+            Text("Ver foro de anuncios", fontFamily = Outfit, fontSize = 12.sp, color = T.blue)
+        }
         if (p.estado_confirmacion == "Pendiente") {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
