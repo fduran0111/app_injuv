@@ -37,6 +37,10 @@ interface InjuvApi {
     @POST("oportunidades/{id}/postular")
     suspend fun postular(@Path("id") id: Int): PostularResponse
 
+    // ---------- Búsqueda de usuarios (organización/admin) ----------
+    @GET("usuarios/buscar")
+    suspend fun buscarUsuario(@Query("email") email: String): Usuario
+
     // ---------- Mis postulaciones ----------
     @GET("usuarios/me/postulaciones")
     suspend fun misPostulaciones(): List<PostulacionUsuario>

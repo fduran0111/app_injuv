@@ -54,7 +54,7 @@ fun ForumsScreen(
         item {
             AppScreenHeader(
                 title = "Foros",
-                subtitle = "Anuncios de tus voluntariados en curso",
+                subtitle = "Chats con tus organizaciones",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
             )
@@ -82,7 +82,7 @@ fun ForumsScreen(
                     .padding(horizontal = 20.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Brush.linearGradient(T.bgCardGradient))
-                    .clickable { onOpenForum(channel.programId) }
+                    .clickable { onOpenForum(channel.id) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

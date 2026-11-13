@@ -45,9 +45,11 @@ import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.AttendancePreferences
+import com.injuv.voluntariado.data.DesignationsPreferences
 import com.injuv.voluntariado.data.ForumChannel
 import com.injuv.voluntariado.data.ForumMessage
 import com.injuv.voluntariado.data.ForumPreferences
+import com.injuv.voluntariado.data.OrgPreferences
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.data.SessionPreferences
@@ -56,9 +58,11 @@ import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.screens.AcademyScreen
 import com.injuv.voluntariado.screens.ApplicationDetailScreen
 import com.injuv.voluntariado.screens.ApplicationsScreen
+import com.injuv.voluntariado.screens.AssignTutorScreen
 import com.injuv.voluntariado.screens.AttendanceScreen
 import com.injuv.voluntariado.screens.AuthScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
+import com.injuv.voluntariado.screens.EditOrgScreen
 import com.injuv.voluntariado.screens.EditProfileScreen
 import com.injuv.voluntariado.screens.ForumScreen
 import com.injuv.voluntariado.screens.ForumsScreen
@@ -66,6 +70,7 @@ import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
 import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
+import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
 import com.injuv.voluntariado.screens.TutorDashboardScreen
@@ -83,6 +88,7 @@ private val screensWithBottomNav = setOf(
     "library",
     "tutor_home",
     "forums",
+    "org",
 )
 
 private fun NavHostController.goTo(route: String) {
@@ -106,7 +112,16 @@ fun InjuvApp(
     val profilePrefs = remember { ProfilePreferences(context) }
     val attendancePrefs = remember { AttendancePreferences(context) }
     val forumPrefs = remember { ForumPreferences(context) }
+    val orgPrefs = remember { OrgPreferences(context) }
+    val designationsPrefs = remember { DesignationsPreferences(context) }
     var isTutorMode by remember { mutableStateOf(session.isTutor()) }
+    var isOrgMode by remember { mutableStateOf(session.isOrg()) }
+    var orgProfile by remember { mutableStateOf(orgPrefs.load()) }
+    var designations by remember {
+        mutableStateOf(
+            SampleData.opportunities.associate { it.id to designationsPrefs.tutorsFor(it.id) },
+        )
+    }
     var tutorProgramId by remember { mutableStateOf(session.tutorProgramId()) }
     var presentTodayCount by remember {
         mutableStateOf(
@@ -171,6 +186,8 @@ fun InjuvApp(
                 BottomBar(
                     currentRoute = currentBaseRoute,
                     isTutor = isTutorMode,
+                    isOrg = isOrgMode,
+                    isAdmin = usuario?.rol == "admin",
                     onNavigate = { route ->
                         menuOpen = false
                         navController.goTo(route)
@@ -265,6 +282,85 @@ fun InjuvApp(
                                 session.setTutorProgramId(id)
                                 tutorProgramId = id
                             },
+                            isOrg = isOrgMode,
+                            onOrgChange = { enabled ->
+                                session.setOrg(enabled)
+                                isOrgMode = enabled
+                            },
+                        )
+                    }
+                    composable("org") {
+                        OrganizationScreen(
+                            org = orgProfile,
+                            onEdit = { navController.navigate("edit_org") },
+                            onShowAlert = onShowAlert,
+                            onToggleMenu = onToggleMenu,
+                            designations = designations,
+                            onAssignTutor = { id ->
+                                menuOpen = false
+                                navController.navigate("assign_tutor/$id")
+                            },
+                            onViewAttendance = { id ->
+                                menuOpen = false
+                                navController.navigate("org_attendance/$id")
+                            },
+                            resolveName = { entry ->
+                                val parts = entry.split("|", limit = 2)
+                                val email = if (parts.size == 2) parts[0] else if (entry.contains("@")) entry else null
+                                val me = SessionManager.user.value
+                                when {
+                                    email != null && me != null && me.email.equals(email, ignoreCase = true) -> me.nombreCompleto
+                                    parts.size == 2 -> parts[1]
+                                    email != null -> session.registeredName(email) ?: email.substringBefore("@")
+                                    else -> entry
+                                }
+                            },
+                        )
+                    }
+                    composable(
+                        "org_attendance/{programId}",
+                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val programId = entry.arguments?.getInt("programId") ?: 0
+                        val program = SampleData.opportunities.find { it.id == programId }
+                        val todayKey = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+                        AttendanceScreen(
+                            programTitle = program?.title ?: "Voluntariado",
+                            roster = SampleData.tutorRoster,
+                            initialDateKey = todayKey,
+                            loadPresent = { key -> attendancePrefs.presentNames(key) },
+                            savePresent = { _, _ -> },
+                            onBack = { navController.popBackStack() },
+                            readOnly = true,
+                        )
+                    }
+                    composable(
+                        "assign_tutor/{programId}",
+                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val programId = entry.arguments?.getInt("programId") ?: 0
+                        val program = SampleData.opportunities.find { it.id == programId }
+                        AssignTutorScreen(
+                            programTitle = program?.title ?: "Voluntariado",
+                            findAccount = { email -> ApiClient.call { buscarUsuario(email) }.nombreCompleto },
+                            initialAssigned = designations[programId].orEmpty(),
+                            onSave = { names ->
+                                designationsPrefs.save(programId, names)
+                                designations = designations + (programId to names)
+                                navController.popBackStack()
+                            },
+                            onBack = { navController.popBackStack() },
+                        )
+                    }
+                    composable("edit_org") {
+                        EditOrgScreen(
+                            org = orgProfile,
+                            onSave = { updated ->
+                                orgProfile = updated
+                                orgPrefs.save(updated)
+                                navController.popBackStack()
+                            },
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable("tutor_home") {
@@ -335,7 +431,7 @@ fun InjuvApp(
                         ForumScreen(
                             programTitle = programTitle,
                             messages = messages,
-                            isTutor = isTutorMode,
+                            canWrite = isTutorMode,
                             onSend = { text ->
                                 val message = ForumMessage(
                                     id = (messages.maxOfOrNull { it.id } ?: 0) + 1,
@@ -352,22 +448,68 @@ fun InjuvApp(
                     composable("forums") {
                         val channels = postulaciones
                             .filter { it.estado == "Seleccionado" && !it.voluntariado_terminado && !it.rechazo_participacion }
+                            .distinctBy { it.organizacion_id ?: it.organizacion_nombre }
                             .map { p ->
+                                val orgId = p.organizacion_id ?: p.organizacion_nombre.lowercase().hashCode()
                                 ForumChannel(
-                                    p.oportunidad_id,
-                                    p.oportunidad_titulo,
+                                    orgId,
                                     p.organizacion_nombre,
-                                    forumPrefs.messages(p.oportunidad_id).lastOrNull()?.text,
+                                    "Canal directo",
+                                    forumPrefs.messagesOrg(orgId).lastOrNull()?.text,
                                 )
                             }
                         ForumsScreen(
                             forums = channels,
                             onOpenForum = { id ->
                                 menuOpen = false
-                                navController.navigate("forum/$id")
+                                navController.navigate("org_chat/$id")
                             },
                             onShowAlert = onShowAlert,
                             onToggleMenu = onToggleMenu,
+                        )
+                    }
+                    composable(
+                        "org_chat/{orgId}",
+                        arguments = listOf(navArgument("orgId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val orgId = entry.arguments?.getInt("orgId") ?: 0
+                        val orgName = postulaciones
+                            .firstOrNull {
+                                (it.organizacion_id ?: it.organizacion_nombre.lowercase().hashCode()) == orgId
+                            }
+                            ?.organizacion_nombre
+                            ?: "Organización"
+                        var messages by remember {
+                            mutableStateOf(
+                                forumPrefs.seedOrgIfEmpty(
+                                    orgId,
+                                    ForumMessage(
+                                        id = 1,
+                                        author = orgName,
+                                        text = "Este es el canal directo con $orgName. Escríbeles si tienes dudas sobre tu voluntariado.",
+                                        date = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale("es", "CL")).format(java.util.Date()),
+                                    ),
+                                ),
+                            )
+                        }
+                        ForumScreen(
+                            programTitle = orgName,
+                            headerTitle = "Chat",
+                            badge = null,
+                            placeholder = "Escribe un mensaje...",
+                            messages = messages,
+                            canWrite = true,
+                            onSend = { text ->
+                                val message = ForumMessage(
+                                    id = (messages.maxOfOrNull { it.id } ?: 0) + 1,
+                                    author = usuario?.nombreCompleto ?: userProfile.name,
+                                    text = text,
+                                    date = java.text.SimpleDateFormat("d MMM, HH:mm", java.util.Locale("es", "CL")).format(java.util.Date()),
+                                )
+                                forumPrefs.appendOrg(orgId, message)
+                                messages = messages + message
+                            },
+                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable("news") {
@@ -452,7 +594,13 @@ fun InjuvApp(
 }
 
 @Composable
-private fun BottomBar(currentRoute: String, isTutor: Boolean, onNavigate: (String) -> Unit) {
+private fun BottomBar(
+    currentRoute: String,
+    isTutor: Boolean,
+    isOrg: Boolean,
+    isAdmin: Boolean = false,
+    onNavigate: (String) -> Unit,
+) {
     val T = LocalAppColors.current
     androidx.compose.material3.NavigationBar(
         containerColor = T.navBg,
@@ -460,6 +608,8 @@ private fun BottomBar(currentRoute: String, isTutor: Boolean, onNavigate: (Strin
     ) {
         BottomNavItem.values()
             .filter { it != BottomNavItem.Tutor || isTutor }
+            .filter { it != BottomNavItem.Org || isOrg }
+            .filter { it != BottomNavItem.Applications || (!isOrg && !isAdmin) }
             .forEach { item ->
             val isActive = item.route == currentRoute
             NavigationBarItem(

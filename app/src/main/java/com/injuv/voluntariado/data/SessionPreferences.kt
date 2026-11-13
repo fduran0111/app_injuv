@@ -47,6 +47,12 @@ class SessionPreferences(context: Context) {
         prefs.edit().putInt(KEY_TUTOR_PROGRAM, id).apply()
     }
 
+    fun isOrg(): Boolean = prefs.getBoolean(KEY_ORG, false)
+
+    fun setOrg(isOrg: Boolean) {
+        prefs.edit().putBoolean(KEY_ORG, isOrg).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "injuv_prefs"
         private const val ACCOUNTS_NAME = "injuv_accounts"
@@ -55,5 +61,6 @@ class SessionPreferences(context: Context) {
         private const val KEY_EMAIL = "user_email"
         private const val KEY_TUTOR = "is_tutor"
         private const val KEY_TUTOR_PROGRAM = "tutor_program_id"
+        private const val KEY_ORG = "is_org"
     }
 }

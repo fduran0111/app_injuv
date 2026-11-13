@@ -47,7 +47,11 @@ import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 fun ForumScreen(
     programTitle: String,
     messages: List<ForumMessage>,
-    isTutor: Boolean,
+    canWrite: Boolean,
+    headerTitle: String = "Foro de anuncios",
+    badge: String? = "TUTOR",
+    placeholder: String = "Escribe un anuncio...",
+    readOnlyText: String = "Solo lectura — únicamente el tutor puede publicar anuncios",
     onSend: (String) -> Unit = {},
     onBack: () -> Unit,
 ) {
@@ -71,7 +75,7 @@ fun ForumScreen(
             }
             Column {
                 Text(
-                    "Foro de anuncios",
+                    headerTitle,
                     fontFamily = SpaceGrotesk,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
@@ -100,18 +104,20 @@ fun ForumScreen(
                         .padding(14.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "TUTOR",
-                            fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 9.sp,
-                            color = T.coral,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(T.coral.copy(alpha = 0.15f))
-                                .padding(horizontal = 8.dp, vertical = 2.dp),
-                        )
-                        Spacer(Modifier.width(8.dp))
+                        if (badge != null) {
+                            Text(
+                                badge,
+                                fontFamily = SpaceGrotesk,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 9.sp,
+                                color = T.coral,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(T.coral.copy(alpha = 0.15f))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                        }
                         Text(
                             message.author,
                             fontFamily = SpaceGrotesk,
@@ -139,7 +145,7 @@ fun ForumScreen(
             }
         }
 
-        if (isTutor) {
+        if (canWrite) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,7 +158,7 @@ fun ForumScreen(
                     onValueChange = { draft = it },
                     placeholder = {
                         Text(
-                            "Escribe un anuncio...",
+                            placeholder,
                             fontFamily = Outfit,
                             fontSize = 13.sp,
                             color = T.textMuted,
@@ -199,7 +205,7 @@ fun ForumScreen(
                 Icon(Icons.Filled.Lock, contentDescription = null, tint = T.textSubtle, modifier = Modifier.size(14.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    "Solo lectura — únicamente el tutor puede publicar anuncios",
+                    readOnlyText,
                     fontFamily = Outfit,
                     fontSize = 11.sp,
                     color = T.textMuted,

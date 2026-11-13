@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -57,6 +58,8 @@ fun SettingsScreen(
     onTutorChange: (Boolean) -> Unit = {},
     tutorProgramId: Int = 0,
     onTutorProgramChange: (Int) -> Unit = {},
+    isOrg: Boolean = false,
+    onOrgChange: (Boolean) -> Unit = {},
 ) {
     val T = LocalAppColors.current
 
@@ -156,6 +159,47 @@ fun SettingsScreen(
                     onSelect = { title ->
                         SampleData.opportunities.find { it.title == title }?.let { onTutorProgramChange(it.id) }
                     },
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Business, contentDescription = null, tint = T.coral)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                ) {
+                    Text(
+                        "Organización",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                        color = T.textPrimary,
+                    )
+                    Text(
+                        if (isOrg) "Perfil de ONG activado" else "Administra el perfil de tu ONG",
+                        fontFamily = Outfit,
+                        fontSize = 12.sp,
+                        color = T.textMuted,
+                    )
+                }
+                Switch(
+                    checked = isOrg,
+                    onCheckedChange = onOrgChange,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = T.coral,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = T.textSubtle,
+                    ),
                 )
             }
 

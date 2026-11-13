@@ -60,6 +60,7 @@ fun AttendanceScreen(
     loadPresent: (String) -> Set<String>,
     savePresent: (String, Set<String>) -> Unit,
     onBack: () -> Unit,
+    readOnly: Boolean = false,
 ) {
     val T = LocalAppColors.current
     val context = LocalContext.current
@@ -156,9 +157,15 @@ fun AttendanceScreen(
                         .padding(vertical = 6.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(Brush.linearGradient(T.bgCardGradient))
-                        .clickable {
-                            present = if (isPresent) present - name else present + name
-                        }
+                        .then(
+                            if (readOnly) {
+                                Modifier
+                            } else {
+                                Modifier.clickable {
+                                    present = if (isPresent) present - name else present + name
+                                }
+                            },
+                        )
                         .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -190,43 +197,56 @@ fun AttendanceScreen(
                     } else {
                         Icon(Icons.Filled.Cancel, contentDescription = "Ausente", tint = T.textSubtle, modifier = Modifier.size(22.dp))
                     }
-                    Spacer(Modifier.size(8.dp))
-                    Checkbox(
-                        checked = isPresent,
-                        onCheckedChange = { checked ->
-                            present = if (checked) present + name else present - name
-                        },
-                        colors = CheckboxDefaults.colors(checkedColor = T.green),
-                    )
+                    if (!readOnly) {
+                        Spacer(Modifier.size(8.dp))
+                        Checkbox(
+                            checked = isPresent,
+                            onCheckedChange = { checked ->
+                                present = if (checked) present + name else present - name
+                            },
+                            colors = CheckboxDefaults.colors(checkedColor = T.green),
+                        )
+                    }
                 }
             }
         }
 
         Column(modifier = Modifier.padding(20.dp)) {
-            Button(
-                onClick = { savePresent(dateKey, present) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral),
-            ) {
+            if (readOnly) {
                 Text(
-                    "Guardar lista",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 15.sp,
+                    "Vista de solo lectura — el tutor registra la asistencia",
+                    fontFamily = Outfit,
+                    fontSize = 11.sp,
+                    color = T.textMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                Button(
+                    onClick = { savePresent(dateKey, present) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                ) {
+                    Text(
+                        "Guardar lista",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Toca un nombre para marcarlo presente o ausente",
+                    fontFamily = Outfit,
+                    fontSize = 11.sp,
+                    color = T.textMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Toca un nombre para marcarlo presente o ausente",
-                fontFamily = Outfit,
-                fontSize = 11.sp,
-                color = T.textMuted,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
     }
 

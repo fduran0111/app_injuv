@@ -27,12 +27,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Article
 import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Forum
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.Article
 import androidx.compose.material.icons.outlined.Assignment
+import androidx.compose.material.icons.outlined.Business
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
@@ -182,6 +184,7 @@ enum class BottomNavItem(val route: String, val label: String) {
     News("news", "Noticias"),
     Tutor("tutor_home", "Tutoría"),
     Forums("forums", "Foros"),
+    Org("org", "ONG"),
     Profile("profile", "Perfil"),
 }
 
@@ -193,6 +196,7 @@ fun bottomNavIcon(item: BottomNavItem, active: Boolean) {
         BottomNavItem.News -> if (active) Icons.Filled.Article else Icons.Outlined.Article
         BottomNavItem.Tutor -> if (active) Icons.Filled.Groups else Icons.Outlined.Groups
         BottomNavItem.Forums -> if (active) Icons.Filled.Forum else Icons.Outlined.Forum
+        BottomNavItem.Org -> if (active) Icons.Filled.Business else Icons.Outlined.Business
         BottomNavItem.Profile -> if (active) Icons.Filled.Person else Icons.Outlined.Person
     }
     Icon(imageVector = icon, contentDescription = item.label)

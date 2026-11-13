@@ -104,8 +104,16 @@ data class Book(
     val coverUrl: String,
 )
 
+data class OrgProfile(
+    val name: String = "",
+    val about: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val website: String = "",
+)
+
 data class ForumChannel(
-    val programId: Int,
+    val id: Int,
     val title: String,
     val org: String,
     val lastMessage: String?,
