@@ -34,6 +34,25 @@ interface InjuvApi {
     @GET("oportunidades/{id}")
     suspend fun oportunidad(@Path("id") id: Int): Oportunidad
 
+    /** Voluntariados de la organización del usuario (integrantes). */
+    @GET("oportunidades/mias")
+    suspend fun oportunidadesMias(): List<Oportunidad>
+
+    /** Voluntariados donde el usuario es encargado/tutor (designado desde la web o la app). */
+    @GET("oportunidades/tutorias")
+    suspend fun tutorias(): List<Oportunidad>
+
+    /** Administrador y miembros de la organización del usuario. */
+    @GET("organizaciones/mia/integrantes")
+    suspend fun integrantes(): List<Usuario>
+
+    @GET("oportunidades/{id}/encargados")
+    suspend fun encargados(@Path("id") id: Int): List<Encargado>
+
+    /** Reemplaza la lista de encargados (misma columna `encargados_ids` que usa la web). */
+    @PUT("oportunidades/{id}/encargados")
+    suspend fun guardarEncargados(@Path("id") id: Int, @Body body: EncargadosBody): List<Encargado>
+
     @POST("oportunidades/{id}/postular")
     suspend fun postular(@Path("id") id: Int): PostularResponse
 
