@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
@@ -57,8 +56,10 @@ fun SettingsScreen(
     tutorPrograms: List<Pair<Int, String>> = emptyList(),
     tutorProgramId: Int = 0,
     onTutorProgramChange: (Int) -> Unit = {},
-    isOrg: Boolean = false,
-    onOrgChange: (Boolean) -> Unit = {},
+    /** Administrador de la organización ("super tutor"). */
+    isSuperTutor: Boolean = false,
+    /** Organización a la que pertenece la cuenta (null si es voluntario). */
+    orgName: String? = null,
 ) {
     val T = LocalAppColors.current
 
@@ -118,15 +119,24 @@ fun SettingsScreen(
                         .padding(horizontal = 12.dp),
                 ) {
                     Text(
-                        "Tutor de voluntariado",
+                        when {
+                            isSuperTutor -> "Super tutor"
+                            orgName != null -> "Tutor de voluntariado"
+                            else -> "Voluntario"
+                        },
                         fontFamily = SpaceGrotesk,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = T.textPrimary,
                     )
                     Text(
-                        if (tutorPrograms.isNotEmpty()) "Designado en ${tutorPrograms.size} voluntariado(s)"
-                        else "Aún no te designan como tutor",
+                        when {
+                            isSuperTutor -> "Administras $orgName y todos sus voluntariados"
+                            orgName != null && tutorPrograms.isNotEmpty() ->
+                                "Integrante de $orgName · tutor en ${tutorPrograms.size} voluntariado(s)"
+                            orgName != null -> "Integrante de $orgName · aún sin voluntariados asignados"
+                            else -> "Te designan tutor cuando una organización te agrega como integrante"
+                        },
                         fontFamily = Outfit,
                         fontSize = 12.sp,
                         color = T.textMuted,
@@ -149,47 +159,6 @@ fun SettingsScreen(
                     onSelect = { title ->
                         tutorPrograms.find { it.second == title }?.let { onTutorProgramChange(it.first) }
                     },
-                )
-            }
-
-            Spacer(Modifier.height(10.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Business, contentDescription = null, tint = T.coral)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                ) {
-                    Text(
-                        "Organización",
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = T.textPrimary,
-                    )
-                    Text(
-                        if (isOrg) "Perfil de ONG activado" else "Administra el perfil de tu ONG",
-                        fontFamily = Outfit,
-                        fontSize = 12.sp,
-                        color = T.textMuted,
-                    )
-                }
-                Switch(
-                    checked = isOrg,
-                    onCheckedChange = onOrgChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = T.coral,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = T.textSubtle,
-                    ),
                 )
             }
 

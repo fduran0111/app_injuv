@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+val localProps = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
+/** URL de la API: `-P<key>=...`, luego `<key>=...` en local.properties y si no, [default]. Siempre termina en "/". */
+fun apiUrl(key: String, default: String): String {
+    val url = (findProperty(key) as String?) ?: localProps.getProperty(key) ?: default
+    return url.trim().removeSuffix("/") + "/"
 }
 
 android {
@@ -18,12 +30,18 @@ android {
 
     buildTypes {
         debug {
-            // Emulador de Android Studio → API local (`py main.py` en el PC). En un teléfono físico
-            // usa la IP de tu PC en la red, por ejemplo "http://192.168.1.20:8000/".
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
+            // Por defecto, emulador de Android Studio → API local (`py main.py` en el PC). Para usar
+            // Render o un teléfono físico agrega en local.properties, por ejemplo:
+            //   injuv.api.debug=https://plataforma-web-injuv-r05k.onrender.com/
+            //   injuv.api.debug=http://192.168.1.20:8000/
+            buildConfigField("String", "API_BASE_URL", "\"${apiUrl("injuv.api.debug", "http://10.0.2.2:8000/")}\"")
         }
         release {
-            buildConfigField("String", "API_BASE_URL", "\"https://plataforma-web-injuv-r05k.onrender.com/\"")
+            buildConfigField(
+                "String",
+                "API_BASE_URL",
+                "\"${apiUrl("injuv.api.release", "https://plataforma-web-injuv-r05k.onrender.com/")}\"",
+            )
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

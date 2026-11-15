@@ -1,6 +1,5 @@
 package com.injuv.voluntariado.screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,12 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,7 +39,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,36 +46,22 @@ import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
+
+/** Un voluntario de la lista: [id] es el de su postulación. */
+data class RosterEntry(val id: Int, val name: String)
 
 @Composable
 fun AttendanceScreen(
     programTitle: String,
-    roster: List<String>,
-    initialDateKey: String,
-    loadPresent: (String) -> Set<String>,
-    savePresent: (String, Set<String>) -> Unit,
+    roster: List<RosterEntry>,
+    initialPresent: Set<Int>,
+    onSave: (Set<Int>) -> Unit,
     onBack: () -> Unit,
     readOnly: Boolean = false,
+    saving: Boolean = false,
 ) {
     val T = LocalAppColors.current
-    val context = LocalContext.current
-    var dateKey by remember { mutableStateOf(initialDateKey) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var present by remember { mutableStateOf(loadPresent(dateKey).ifEmpty { roster.toSet() }) }
-
-    fun labelFor(key: String): String {
-        val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(key) ?: return key
-        return SimpleDateFormat("EEEE d 'de' MMMM", Locale("es", "CL")).format(date)
-            .replaceFirstChar { it.uppercase() }
-    }
-
-    fun selectDate(key: String) {
-        dateKey = key
-        present = loadPresent(key).ifEmpty { roster.toSet() }
-    }
+    var present by remember(initialPresent) { mutableStateOf(initialPresent) }
 
     Column(
         modifier = Modifier
@@ -103,23 +87,12 @@ fun AttendanceScreen(
                     color = Color.White,
                 )
                 Text(programTitle, fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { showDatePicker = true },
-                ) {
-                    Icon(
-                        Icons.Filled.CalendarToday,
-                        contentDescription = "Elegir fecha",
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(12.dp),
-                    )
-                    Text(
-                        "  ${labelFor(dateKey)}",
-                        fontFamily = Outfit,
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
-                }
+                Text(
+                    "Asistencia a la actividad",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.85f),
+                )
             }
         }
 
@@ -149,8 +122,9 @@ fun AttendanceScreen(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
         ) {
-            items(roster) { name ->
-                val isPresent = name in present
+            items(roster, key = { it.id }) { entry ->
+                val name = entry.name
+                val isPresent = entry.id in present
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -162,7 +136,7 @@ fun AttendanceScreen(
                                 Modifier
                             } else {
                                 Modifier.clickable {
-                                    present = if (isPresent) present - name else present + name
+                                    present = if (isPresent) present - entry.id else present + entry.id
                                 }
                             },
                         )
@@ -202,7 +176,7 @@ fun AttendanceScreen(
                         Checkbox(
                             checked = isPresent,
                             onCheckedChange = { checked ->
-                                present = if (checked) present + name else present - name
+                                present = if (checked) present + entry.id else present - entry.id
                             },
                             colors = CheckboxDefaults.colors(checkedColor = T.green),
                         )
@@ -223,14 +197,17 @@ fun AttendanceScreen(
                 )
             } else {
                 Button(
-                    onClick = { savePresent(dateKey, present) },
+                    onClick = { onSave(present) },
+                    enabled = !saving,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = T.coral),
                 ) {
-                    Text(
+                    if (saving) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    } else Text(
                         "Guardar lista",
                         fontFamily = SpaceGrotesk,
                         fontWeight = FontWeight.SemiBold,
@@ -248,21 +225,5 @@ fun AttendanceScreen(
                 )
             }
         }
-    }
-
-    if (showDatePicker) {
-        val calendar = Calendar.getInstance().apply {
-            SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(dateKey)?.let { time = it }
-        }
-        DatePickerDialog(
-            context,
-            { _, year, month, day ->
-                selectDate("%04d-%02d-%02d".format(year, month + 1, day))
-                showDatePicker = false
-            },
-            calendar.get(Calendar.YEAR),
-            calendar.get(Calendar.MONTH),
-            calendar.get(Calendar.DAY_OF_MONTH),
-        ).show()
     }
 }

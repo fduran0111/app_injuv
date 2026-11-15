@@ -27,6 +27,7 @@ data class Usuario(
     val region: String = "",
     val ciudad: String = "",
     val comuna: String = "",
+    val sexo: String = "",
     val fecha_nacimiento: String? = null,
     /** "user" | "organizacion" | "admin" */
     val rol: String = "user",
@@ -184,3 +185,104 @@ data class Estadisticas(
     val oportunidades: Int = 0,
     val horas: Int = 0,
 )
+
+/** PUT /usuarios/me (todos los campos se reemplazan). */
+@Serializable
+data class PerfilUsuarioBody(
+    val nombre: String,
+    val apellido: String,
+    val email: String,
+    val telefono: String?,
+    val region: String?,
+    val ciudad: String?,
+    val comuna: String?,
+    val sexo: String?,
+    val fecha_nacimiento: String?,
+)
+
+/**
+ * GET/PUT /organizaciones/mia. Se usa también como cuerpo del PUT: el backend reemplaza todos
+ * los campos, así que se edita una copia de lo que devolvió el GET.
+ */
+@Serializable
+data class OrganizacionDetalle(
+    val id: Int = 0,
+    val nombre: String = "",
+    val siglas_nombre: String = "",
+    val email_contacto: String = "",
+    val telefono_contacto: String = "",
+    val region: String = "",
+    val ciudad: String = "",
+    val comuna: String = "",
+    val descripcion: String = "",
+    val descripcion_breve: String = "",
+    val area_trabajo: String = "",
+    val tipo_org: String = "",
+    val sitio_web: String = "",
+    val redes_sociales: List<String> = emptyList(),
+    val experiencia_anios: Int? = null,
+    val voluntarios_anuales: String = "",
+    val tiene_logo: Boolean = false,
+)
+
+/** GET /organizaciones/mia/integrantes: administrador y miembros de la organización. */
+@Serializable
+data class Integrante(
+    val id: Int,
+    val nombre: String = "",
+    val apellido: String = "",
+    val email: String = "",
+    val telefono: String = "",
+    /** "admin" | "miembro" */
+    val rol: String = "miembro",
+) {
+    val nombreCompleto: String get() = listOf(nombre, apellido).filter { it.isNotBlank() }.joinToString(" ").ifBlank { email }
+}
+
+/** GET /oportunidades/{id}/postulaciones (vista de la organización). */
+@Serializable
+data class PostulacionOrg(
+    val id: Int,
+    val usuario_id: Int? = null,
+    val estado: String = "Pendiente de revisión",
+    val estado_confirmacion: String = "Pendiente",
+    /** "SI" | "No" | "No aplica" */
+    val asistencia_actividad: String = "No aplica",
+    val horas_voluntariado: Double = 0.0,
+    val rechazo_participacion: Boolean = false,
+    val usuario_nombre: String = "",
+    val usuario_email: String = "",
+) {
+    /** Participa del voluntariado: seleccionado y no se retiró ni rechazó. */
+    val participa: Boolean get() = estado == "Seleccionado" && !rechazo_participacion
+}
+
+/** PATCH /postulaciones/{id}/asistencia ("SI" | "No" | "No aplica"). */
+@Serializable
+data class AsistenciaBody(val asistencia_actividad: String)
+
+/** GET /foros: voluntariados con foro (los que tutorea o en los que participa el usuario). */
+@Serializable
+data class ForoCanal(
+    val oportunidad_id: Int,
+    val titulo: String = "",
+    val organizacion_nombre: String = "",
+    val es_tutor: Boolean = false,
+    val ultimo_mensaje: String? = null,
+    val ultima_fecha: String? = null,
+)
+
+/** Mensaje del foro de un voluntariado; canal "anuncios" (solo tutores) o "chat". */
+@Serializable
+data class ForoMensaje(
+    val id: Int,
+    val canal: String = "chat",
+    val autor_id: Int? = null,
+    val autor_nombre: String = "",
+    val es_tutor: Boolean = false,
+    val texto: String = "",
+    val created_at: String? = null,
+)
+
+@Serializable
+data class ForoMensajeBody(val canal: String, val texto: String)

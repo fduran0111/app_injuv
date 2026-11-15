@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.MenuIconButton
 import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.data.OrgProfile
-import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.data.api.Encargado
 import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.ui.theme.LocalAppColors
@@ -62,6 +61,11 @@ fun OrganizationScreen(
     loadError: String? = null,
     onAssignTutor: (Int) -> Unit = {},
     onViewAttendance: (Int) -> Unit = {},
+    /** Super tutor (administrador de la ONG): edita la organización y designa tutores. */
+    canManage: Boolean = false,
+    memberCount: Int = 0,
+    /** Voluntariados donde el usuario es tutor (puede pasar lista). */
+    tutorDe: Set<Int> = emptySet(),
 ) {
     val T = LocalAppColors.current
     val displayName = org.name.ifBlank { "Mi organización" }
@@ -104,13 +108,14 @@ fun OrganizationScreen(
                         }
                         Spacer(Modifier.height(10.dp))
                         Text(displayName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                        Text("Perfil de organización", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
+                        Text(if (canManage) "Super tutor · administrador" else "Tutor · integrante", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                         Spacer(Modifier.height(18.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OrgStat("${oportunidades.size}", "Programas")
-                            OrgStat("${SampleData.tutorRoster.size}", "Voluntarios")
-                            OrgStat("${SampleData.news.size}", "Noticias")
+                            OrgStat("${oportunidades.sumOf { it.num_postulaciones }}", "Postulantes")
+                            OrgStat("$memberCount", "Integrantes")
                         }
+                        if (canManage) {
                         Spacer(Modifier.height(14.dp))
                         Row(
                             modifier = Modifier
@@ -129,6 +134,7 @@ fun OrganizationScreen(
                                 fontSize = 12.sp,
                                 color = Color.White,
                             )
+                        }
                         }
                     }
                     NotificationIconButton(onClick = onShowAlert)
@@ -156,7 +162,7 @@ fun OrganizationScreen(
 
         item {
             Text(
-                "Oportunidades publicadas",
+                if (canManage) "Oportunidades publicadas" else "Tus voluntariados como tutor",
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
@@ -168,7 +174,7 @@ fun OrganizationScreen(
         if (loadError != null || oportunidades.isEmpty()) {
             item {
                 Text(
-                    loadError ?: "Tu organización aún no publica voluntariados.",
+                    loadError ?: if (canManage) "Tu organización aún no publica voluntariados." else "Aún no te asignan voluntariados.",
                     fontFamily = Outfit,
                     fontSize = 12.sp,
                     color = if (loadError != null) T.coral else T.textSubtle,
@@ -185,7 +191,7 @@ fun OrganizationScreen(
                     .padding(horizontal = 20.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(16.dp))
                     .background(Brush.linearGradient(T.bgCardGradient))
-                    .clickable { onAssignTutor(opportunity.id) }
+                    .clickable(enabled = canManage) { onAssignTutor(opportunity.id) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -205,17 +211,19 @@ fun OrganizationScreen(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        if (assigned.isEmpty()) "Sin tutor designado — toca para asignar"
+                        if (assigned.isEmpty()) (if (canManage) "Sin tutor designado — toca para asignar" else "Sin tutor designado")
                         else "Tutores: ${assigned.joinToString(", ") { it.nombreCompleto }}",
                         fontFamily = Outfit,
                         fontSize = 11.sp,
                         color = if (assigned.isEmpty()) T.textSubtle else T.green,
                     )
                 }
-                IconButton(onClick = { onViewAttendance(opportunity.id) }) {
-                    Icon(Icons.Filled.FactCheck, contentDescription = "Ver asistencia", tint = T.coral, modifier = Modifier.size(20.dp))
+                if (canManage || opportunity.id in tutorDe) {
+                    IconButton(onClick = { onViewAttendance(opportunity.id) }) {
+                        Icon(Icons.Filled.FactCheck, contentDescription = "Asistencia", tint = T.coral, modifier = Modifier.size(20.dp))
+                    }
                 }
-                Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
+                if (canManage) Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
             }
         }
     }

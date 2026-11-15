@@ -1,9 +1,14 @@
 package com.injuv.voluntariado.data.api
 
+import okhttp3.MultipartBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
+import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -23,6 +28,17 @@ interface InjuvApi {
     @GET("auth/me")
     suspend fun me(): Usuario
 
+    // ---------- Perfil ----------
+    @PUT("usuarios/me")
+    suspend fun actualizarPerfil(@Body body: PerfilUsuarioBody): Usuario
+
+    @Multipart
+    @POST("usuarios/me/foto")
+    suspend fun subirFoto(@Part imagen: MultipartBody.Part): Usuario
+
+    @DELETE("usuarios/me/foto")
+    suspend fun eliminarFoto(): Usuario
+
     // ---------- Oportunidades ----------
     @GET("oportunidades")
     suspend fun oportunidades(
@@ -34,17 +50,13 @@ interface InjuvApi {
     @GET("oportunidades/{id}")
     suspend fun oportunidad(@Path("id") id: Int): Oportunidad
 
-    /** Voluntariados de la organización del usuario (integrantes). */
+    /** Administrador: todos los voluntariados de su organización; tutor: los que tiene asignados. */
     @GET("oportunidades/mias")
     suspend fun oportunidadesMias(): List<Oportunidad>
 
     /** Voluntariados donde el usuario es encargado/tutor (designado desde la web o la app). */
     @GET("oportunidades/tutorias")
     suspend fun tutorias(): List<Oportunidad>
-
-    /** Administrador y miembros de la organización del usuario. */
-    @GET("organizaciones/mia/integrantes")
-    suspend fun integrantes(): List<Usuario>
 
     @GET("oportunidades/{id}/encargados")
     suspend fun encargados(@Path("id") id: Int): List<Encargado>
@@ -55,6 +67,24 @@ interface InjuvApi {
 
     @POST("oportunidades/{id}/postular")
     suspend fun postular(@Path("id") id: Int): PostularResponse
+
+    // ---------- Organización (integrantes) ----------
+    @GET("organizaciones/mia")
+    suspend fun miOrganizacion(): OrganizacionDetalle
+
+    /** Solo el administrador de la organización. */
+    @PUT("organizaciones/mia")
+    suspend fun actualizarOrganizacion(@Body body: OrganizacionDetalle): OrganizacionDetalle
+
+    /** Administrador y miembros de la organización del usuario. */
+    @GET("organizaciones/mia/integrantes")
+    suspend fun integrantes(): List<Integrante>
+
+    @GET("oportunidades/{id}/postulaciones")
+    suspend fun postulantes(@Path("id") id: Int): List<PostulacionOrg>
+
+    @PATCH("postulaciones/{id}/asistencia")
+    suspend fun registrarAsistencia(@Path("id") id: Int, @Body body: AsistenciaBody): PostulacionOrg
 
     // ---------- Búsqueda de usuarios (organización/admin) ----------
     @GET("usuarios/buscar")
@@ -87,4 +117,14 @@ interface InjuvApi {
 
     @GET("academia/documentos")
     suspend fun academia(@Query("categoria") categoria: String? = null): List<Documento>
+
+    // --- Foros por voluntariado (compartidos con la plataforma) ---
+    @GET("foros")
+    suspend fun foros(): List<ForoCanal>
+
+    @GET("oportunidades/{id}/foro")
+    suspend fun foroMensajes(@Path("id") id: Int, @Query("canal") canal: String): List<ForoMensaje>
+
+    @POST("oportunidades/{id}/foro")
+    suspend fun publicarEnForo(@Path("id") id: Int, @Body body: ForoMensajeBody): ForoMensaje
 }

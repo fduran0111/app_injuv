@@ -54,8 +54,8 @@ import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 import kotlinx.coroutines.launch
 
 /**
- * Designa encargados/tutores por correo. Lee y guarda `encargados_ids` en la API, así que
- * es la misma lista que se edita en la web (formulario del voluntariado).
+ * Designa tutores por correo (solo integrantes de la organización). Lee y guarda `encargados_ids`
+ * en la API, así que es la misma lista que se edita en la web (formulario del voluntariado).
  */
 @Composable
 fun AssignTutorScreen(
@@ -94,6 +94,9 @@ fun AssignTutorScreen(
                 val cuenta = findAccount(email)
                 if (assigned.any { it.id == cuenta.id }) {
                     error = "Esa cuenta ya es encargada de este voluntariado"
+                } else if (!isMember(cuenta)) {
+                    error = "${cuenta.nombreCompleto} no es integrante de tu organización. " +
+                        "Agrégalo primero como miembro desde la plataforma web."
                 } else {
                     assigned = assigned + Encargado(cuenta.id, cuenta.nombre, cuenta.apellido, cuenta.email, isMember(cuenta))
                     emailQuery = ""
