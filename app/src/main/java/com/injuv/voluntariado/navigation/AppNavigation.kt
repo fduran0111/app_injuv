@@ -77,6 +77,7 @@ import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
 import com.injuv.voluntariado.screens.TutorDashboardScreen
+import com.injuv.voluntariado.screens.TutorListScreen
 import com.injuv.voluntariado.screens.computeAgeYears
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -89,6 +90,7 @@ private val screensWithBottomNav = setOf(
     "documents",
     "academy",
     "library",
+    "tutor_list",
     "tutor_home",
     "forums",
     "org",
@@ -376,9 +378,24 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                         )
                     }
-                    composable("tutor_home") {
-                        val program = tutorPrograma ?: run {
-                            Text("Aún no te designan como tutor de un voluntariado.", modifier = Modifier.padding(24.dp))
+                    composable("tutor_list") {
+                        TutorListScreen(
+                            tutorias = tutorias,
+                            onOpen = { id ->
+                                tutorProgramId = id
+                                session.setTutorProgramId(id)
+                                navController.navigate("tutor_home/$id")
+                            },
+                            onOpenSettings = { navController.navigate("settings") },
+                        )
+                    }
+                    composable(
+                        "tutor_home/{programId}",
+                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val programId = entry.arguments?.getInt("programId") ?: 0
+                        val program = tutorias.find { it.id == programId } ?: run {
+                            Text("Ya no eres tutor de este voluntariado.", modifier = Modifier.padding(24.dp))
                             return@composable
                         }
                         TutorDashboardScreen(
@@ -625,7 +642,7 @@ private fun BottomBar(
             .filter { it != BottomNavItem.Org || isOrg }
             .filter { it != BottomNavItem.Applications || (!isOrg && !isAdmin) }
             .forEach { item ->
-            val isActive = item.route == currentRoute
+            val isActive = item.route == currentRoute || (item == BottomNavItem.Tutor && currentRoute == "tutor_home")
             NavigationBarItem(
                 selected = isActive,
                 onClick = { onNavigate(item.route) },
