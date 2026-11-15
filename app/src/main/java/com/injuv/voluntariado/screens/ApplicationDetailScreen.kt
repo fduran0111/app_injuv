@@ -79,6 +79,10 @@ fun ApplicationDetailScreen(oportunidadId: Int, onBack: () -> Unit) {
     }
 }
 
+/** El usuario retiró su postulación o declinó participar: puede volver a postular. */
+private fun MiPostulacion.retirada() =
+    estado == "Declinada por usuario" || (estado == "Seleccionado" && estado_confirmacion == "No confirmado")
+
 @Composable
 private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onPostulado: () -> Unit) {
     val T = LocalAppColors.current
@@ -87,7 +91,9 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
     val usuario by SessionManager.user.collectAsState()
     var confirmando by remember { mutableStateOf(false) }
     var postulando by remember { mutableStateOf(false) }
-    var miPostulacion by remember(opportunity.id) { mutableStateOf<MiPostulacion?>(opportunity.mi_postulacion) }
+    var miPostulacion by remember(opportunity.id) {
+        mutableStateOf<MiPostulacion?>(opportunity.mi_postulacion?.takeUnless { it.retirada() })
+    }
 
     fun enviarPostulacion() {
         postulando = true

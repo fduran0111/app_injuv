@@ -61,7 +61,7 @@ data class RegisterBody(
 )
 
 @Serializable
-data class MiPostulacion(val id: Int, val estado: String)
+data class MiPostulacion(val id: Int, val estado: String, val estado_confirmacion: String = "Pendiente")
 
 @Serializable
 data class Oportunidad(

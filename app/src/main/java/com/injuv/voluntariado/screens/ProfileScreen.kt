@@ -88,6 +88,9 @@ private val ESTADOS_EN_PROCESO = setOf("Pendiente de revisión", "Pre-selecciona
 private fun PostulacionUsuario.enCurso() = estado == "Seleccionado" && !voluntariado_terminado && !rechazo_participacion
 private fun PostulacionUsuario.enProceso() = estado in ESTADOS_EN_PROCESO && !voluntariado_terminado
 
+/** El usuario retiró su postulación o declinó participar: no se muestra en Terminadas. */
+private fun PostulacionUsuario.retirada() = estado == "Declinada por usuario" || rechazo_participacion
+
 @Composable
 fun ProfileScreen(
     onShowAlert: () -> Unit,
@@ -107,7 +110,7 @@ fun ProfileScreen(
     val todas = carga.datos.orEmpty()
     val enCurso = todas.filter { it.enCurso() }
     val postuladas = todas.filter { it.enProceso() }
-    val terminadas = todas.filter { !it.enCurso() && !it.enProceso() }
+    val terminadas = todas.filter { !it.enCurso() && !it.enProceso() && !it.retirada() }
     var retirando by remember { mutableStateOf<PostulacionUsuario?>(null) }
 
     fun accion(mensajeOk: String, llamada: suspend () -> Unit) {
