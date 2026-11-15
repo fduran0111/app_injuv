@@ -42,13 +42,16 @@ import com.injuv.voluntariado.components.ResourcesMenuCard
 import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
 import com.injuv.voluntariado.data.api.ApiClient
+import com.injuv.voluntariado.data.api.Encargado
+import com.injuv.voluntariado.data.api.EncargadosBody
+import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.AttendancePreferences
-import com.injuv.voluntariado.data.DesignationsPreferences
 import com.injuv.voluntariado.data.ForumChannel
 import com.injuv.voluntariado.data.ForumMessage
 import com.injuv.voluntariado.data.ForumPreferences
+import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.OrgPreferences
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SampleData
@@ -74,6 +77,7 @@ import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
 import com.injuv.voluntariado.screens.TutorDashboardScreen
+import com.injuv.voluntariado.screens.TutorListScreen
 import com.injuv.voluntariado.screens.computeAgeYears
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -86,6 +90,7 @@ private val screensWithBottomNav = setOf(
     "documents",
     "academy",
     "library",
+    "tutor_list",
     "tutor_home",
     "forums",
     "org",
@@ -113,16 +118,17 @@ fun InjuvApp(
     val attendancePrefs = remember { AttendancePreferences(context) }
     val forumPrefs = remember { ForumPreferences(context) }
     val orgPrefs = remember { OrgPreferences(context) }
-    val designationsPrefs = remember { DesignationsPreferences(context) }
-    var isTutorMode by remember { mutableStateOf(session.isTutor()) }
     var isOrgMode by remember { mutableStateOf(session.isOrg()) }
     var orgProfile by remember { mutableStateOf(orgPrefs.load()) }
-    var designations by remember {
-        mutableStateOf(
-            SampleData.opportunities.associate { it.id to designationsPrefs.tutorsFor(it.id) },
-        )
-    }
+    // Encargados/tutores: se leen y guardan en la API (oportunidades.encargados_ids), igual que en la web.
+    var tutorias by remember { mutableStateOf<List<Oportunidad>>(emptyList()) }
+    val isTutorMode = tutorias.isNotEmpty()
     var tutorProgramId by remember { mutableStateOf(session.tutorProgramId()) }
+    val tutorPrograma = tutorias.find { it.id == tutorProgramId } ?: tutorias.firstOrNull()
+    var orgOportunidades by remember { mutableStateOf<List<Oportunidad>>(emptyList()) }
+    var orgEncargados by remember { mutableStateOf<Map<Int, List<Encargado>>>(emptyMap()) }
+    var orgError by remember { mutableStateOf<String?>(null) }
+    var orgVersion by remember { mutableStateOf(0) }
     var presentTodayCount by remember {
         mutableStateOf(
             attendancePrefs.presentNames(
@@ -148,6 +154,22 @@ fun InjuvApp(
         return
     }
     LaunchedEffect(usuario?.id) { SessionManager.refrescar() }
+    LaunchedEffect(usuario?.id, orgVersion) {
+        runCatching { ApiClient.call { tutorias() } }.onSuccess { tutorias = it }
+    }
+    LaunchedEffect(usuario?.id, isOrgMode, orgVersion) {
+        if (!isOrgMode) return@LaunchedEffect
+        try {
+            val lista = ApiClient.call { oportunidadesMias() }
+            orgOportunidades = lista
+            orgEncargados = lista.associate { op ->
+                op.id to runCatching { ApiClient.call { encargados(op.id) } }.getOrDefault(emptyList())
+            }
+            orgError = null
+        } catch (e: Exception) {
+            orgError = e.message ?: "No se pudieron cargar los voluntariados de tu organización"
+        }
+    }
 
     // Aviso de cambios de estado: compara las postulaciones actuales con las últimas vistas.
     var cambios by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
@@ -272,12 +294,8 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                             onNavigate = { route -> navController.navigate(route) },
                             onLogout = { logout() },
-                            isTutor = isTutorMode,
-                            onTutorChange = { enabled ->
-                                session.setTutor(enabled)
-                                isTutorMode = enabled
-                            },
-                            tutorProgramId = tutorProgramId,
+                            tutorPrograms = tutorias.map { it.id to it.titulo },
+                            tutorProgramId = tutorPrograma?.id ?: 0,
                             onTutorProgramChange = { id ->
                                 session.setTutorProgramId(id)
                                 tutorProgramId = id
@@ -295,7 +313,9 @@ fun InjuvApp(
                             onEdit = { navController.navigate("edit_org") },
                             onShowAlert = onShowAlert,
                             onToggleMenu = onToggleMenu,
-                            designations = designations,
+                            oportunidades = orgOportunidades,
+                            encargados = orgEncargados,
+                            loadError = orgError,
                             onAssignTutor = { id ->
                                 menuOpen = false
                                 navController.navigate("assign_tutor/$id")
@@ -304,17 +324,6 @@ fun InjuvApp(
                                 menuOpen = false
                                 navController.navigate("org_attendance/$id")
                             },
-                            resolveName = { entry ->
-                                val parts = entry.split("|", limit = 2)
-                                val email = if (parts.size == 2) parts[0] else if (entry.contains("@")) entry else null
-                                val me = SessionManager.user.value
-                                when {
-                                    email != null && me != null && me.email.equals(email, ignoreCase = true) -> me.nombreCompleto
-                                    parts.size == 2 -> parts[1]
-                                    email != null -> session.registeredName(email) ?: email.substringBefore("@")
-                                    else -> entry
-                                }
-                            },
                         )
                     }
                     composable(
@@ -322,10 +331,10 @@ fun InjuvApp(
                         arguments = listOf(navArgument("programId") { type = NavType.IntType }),
                     ) { entry ->
                         val programId = entry.arguments?.getInt("programId") ?: 0
-                        val program = SampleData.opportunities.find { it.id == programId }
+                        val program = orgOportunidades.find { it.id == programId }
                         val todayKey = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                         AttendanceScreen(
-                            programTitle = program?.title ?: "Voluntariado",
+                            programTitle = program?.titulo ?: "Voluntariado",
                             roster = SampleData.tutorRoster,
                             initialDateKey = todayKey,
                             loadPresent = { key -> attendancePrefs.presentNames(key) },
@@ -339,14 +348,20 @@ fun InjuvApp(
                         arguments = listOf(navArgument("programId") { type = NavType.IntType }),
                     ) { entry ->
                         val programId = entry.arguments?.getInt("programId") ?: 0
-                        val program = SampleData.opportunities.find { it.id == programId }
+                        val program = orgOportunidades.find { it.id == programId }
+                        var integrantesIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+                        LaunchedEffect(Unit) {
+                            runCatching { ApiClient.call { integrantes() } }.onSuccess { l -> integrantesIds = l.map { it.id }.toSet() }
+                        }
                         AssignTutorScreen(
-                            programTitle = program?.title ?: "Voluntariado",
-                            findAccount = { email -> ApiClient.call { buscarUsuario(email) }.nombreCompleto },
-                            initialAssigned = designations[programId].orEmpty(),
-                            onSave = { names ->
-                                designationsPrefs.save(programId, names)
-                                designations = designations + (programId to names)
+                            programTitle = program?.titulo ?: "Voluntariado",
+                            loadAssigned = { ApiClient.call { encargados(programId) } },
+                            findAccount = { email -> ApiClient.call { buscarUsuario(email) } },
+                            isMember = { cuenta -> cuenta.id in integrantesIds },
+                            onSave = { ids ->
+                                val guardados = ApiClient.call { guardarEncargados(programId, EncargadosBody(ids)) }
+                                orgEncargados = orgEncargados + (programId to guardados)
+                                orgVersion++
                                 navController.popBackStack()
                             },
                             onBack = { navController.popBackStack() },
@@ -363,25 +378,40 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                         )
                     }
-                    composable("tutor_home") {
-                        val program = SampleData.opportunities.find { it.id == tutorProgramId }
-                            ?: SampleData.opportunities.first()
+                    composable("tutor_list") {
+                        TutorListScreen(
+                            tutorias = tutorias,
+                            onOpen = { id ->
+                                tutorProgramId = id
+                                session.setTutorProgramId(id)
+                                navController.navigate("tutor_home/$id")
+                            },
+                            onOpenSettings = { navController.navigate("settings") },
+                        )
+                    }
+                    composable(
+                        "tutor_home/{programId}",
+                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val programId = entry.arguments?.getInt("programId") ?: 0
+                        val program = tutorias.find { it.id == programId } ?: run {
+                            Text("Ya no eres tutor de este voluntariado.", modifier = Modifier.padding(24.dp))
+                            return@composable
+                        }
                         TutorDashboardScreen(
-                            program = program,
+                            program = program.comoPrograma(),
                             enrolledCount = SampleData.tutorRoster.size,
                             presentToday = presentTodayCount,
                             onAttendance = { navController.navigate("attendance") },
-                            onOpenForum = { navController.navigate("forum/$tutorProgramId") },
+                            onOpenForum = { navController.navigate("forum/${program.id}") },
                             onBack = { navController.popBackStack() },
                             onOpenSettings = { navController.navigate("settings") },
                         )
                     }
                     composable("attendance") {
-                        val program = SampleData.opportunities.find { it.id == tutorProgramId }
-                            ?: SampleData.opportunities.first()
                         val todayKey = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                         AttendanceScreen(
-                            programTitle = program.title,
+                            programTitle = tutorPrograma?.titulo ?: "Voluntariado",
                             roster = SampleData.tutorRoster,
                             initialDateKey = todayKey,
                             loadPresent = { key -> attendancePrefs.presentNames(key) },
@@ -413,6 +443,7 @@ fun InjuvApp(
                     ) { entry ->
                         val programId = entry.arguments?.getInt("programId") ?: 0
                         val programTitle = postulaciones.find { it.oportunidad_id == programId }?.oportunidad_titulo
+                            ?: tutorias.find { it.id == programId }?.titulo
                             ?: SampleData.opportunities.find { it.id == programId }?.title
                             ?: "Voluntariado"
                         var messages by remember {
@@ -431,7 +462,7 @@ fun InjuvApp(
                         ForumScreen(
                             programTitle = programTitle,
                             messages = messages,
-                            canWrite = isTutorMode,
+                            canWrite = tutorias.any { it.id == programId },
                             onSend = { text ->
                                 val message = ForumMessage(
                                     id = (messages.maxOfOrNull { it.id } ?: 0) + 1,
@@ -611,7 +642,7 @@ private fun BottomBar(
             .filter { it != BottomNavItem.Org || isOrg }
             .filter { it != BottomNavItem.Applications || (!isOrg && !isAdmin) }
             .forEach { item ->
-            val isActive = item.route == currentRoute
+            val isActive = item.route == currentRoute || (item == BottomNavItem.Tutor && currentRoute == "tutor_home")
             NavigationBarItem(
                 selected = isActive,
                 onClick = { onNavigate(item.route) },
@@ -644,4 +675,19 @@ private fun UserProfile.completarCon(u: Usuario): UserProfile = copy(
     region = region.ifBlank { u.region },
     city = city.ifBlank { u.ciudad },
     commune = commune.ifBlank { u.comuna },
+)
+
+/** Adapta un voluntariado de la API al modelo que usa el panel de tutor. */
+private fun Oportunidad.comoPrograma() = Opportunity(
+    id = id,
+    title = titulo,
+    org = organizacion_nombre,
+    location = ubicacion,
+    dateRange = listOfNotNull(fecha_inicio_voluntariado, fecha_fin_voluntariado).joinToString(" – "),
+    hours = horas_voluntariado ?: 0,
+    spots = cupo_maximo ?: 0,
+    deadline = fecha_limite_postulacion.orEmpty(),
+    tags = listOf(tipo_de_voluntariado).filter { it.isNotBlank() },
+    description = descripcion,
+    imageUrl = if (tiene_imagen) ApiClient.imagenOportunidad(id) else "",
 )

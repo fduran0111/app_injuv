@@ -61,7 +61,7 @@ data class RegisterBody(
 )
 
 @Serializable
-data class MiPostulacion(val id: Int, val estado: String)
+data class MiPostulacion(val id: Int, val estado: String, val estado_confirmacion: String = "Pendiente")
 
 @Serializable
 data class Oportunidad(
@@ -88,12 +88,30 @@ data class Oportunidad(
     val comuna: String = "",
     val tipo_de_voluntariado: String = "",
     val num_postulaciones: Int = 0,
+    val tiene_imagen: Boolean = false,
+    /** IDs de los encargados/tutores (los mismos que se designan en la web). */
+    val encargados_ids: List<Int> = emptyList(),
     /** Solo viene en GET /oportunidades/{id} cuando hay sesión. */
     val mi_postulacion: MiPostulacion? = null,
 ) {
     val ubicacion: String get() = listOf(comuna, region).filter { it.isNotBlank() }.joinToString(", ").ifBlank { "Chile" }
     val cerrada: Boolean get() = estado == "cerrada"
 }
+
+/** GET/PUT /oportunidades/{id}/encargados. `miembro = false` = tutor externo a la organización. */
+@Serializable
+data class Encargado(
+    val id: Int,
+    val nombre: String = "",
+    val apellido: String = "",
+    val email: String = "",
+    val miembro: Boolean = false,
+) {
+    val nombreCompleto: String get() = listOf(nombre, apellido).filter { it.isNotBlank() }.joinToString(" ").ifBlank { email }
+}
+
+@Serializable
+data class EncargadosBody(val encargados_ids: List<Int>)
 
 @Serializable
 data class PostularResponse(val id: Int, val estado: String)

@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,17 +46,24 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.data.api.Encargado
+import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 import kotlinx.coroutines.launch
 
+/**
+ * Designa encargados/tutores por correo. Lee y guarda `encargados_ids` en la API, así que
+ * es la misma lista que se edita en la web (formulario del voluntariado).
+ */
 @Composable
 fun AssignTutorScreen(
     programTitle: String,
-    findAccount: suspend (String) -> String,
-    initialAssigned: Set<String>,
-    onSave: (Set<String>) -> Unit,
+    loadAssigned: suspend () -> List<Encargado>,
+    findAccount: suspend (String) -> Usuario,
+    isMember: (Usuario) -> Boolean,
+    onSave: suspend (List<Int>) -> Unit,
     onBack: () -> Unit,
 ) {
     val T = LocalAppColors.current
@@ -63,28 +71,51 @@ fun AssignTutorScreen(
     var emailQuery by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var searching by remember { mutableStateOf(false) }
-    var assigned by remember {
-        mutableStateOf(
-            initialAssigned.associate { entry ->
-                val parts = entry.split("|", limit = 2)
-                if (parts.size == 2) parts[0] to parts[1] else parts[0] to parts[0]
-            },
-        )
+    var loading by remember { mutableStateOf(true) }
+    var saving by remember { mutableStateOf(false) }
+    var assigned by remember { mutableStateOf<List<Encargado>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            assigned = loadAssigned()
+        } catch (e: Exception) {
+            error = e.message ?: "No se pudieron cargar los encargados"
+        }
+        loading = false
     }
 
     fun search() {
         val email = emailQuery.trim()
-        if (email.isEmpty() || searching) return
+        if (email.isEmpty() || searching || loading) return
         scope.launch {
             searching = true
             error = null
             try {
-                assigned = assigned + (email.lowercase() to findAccount(email))
-                emailQuery = ""
+                val cuenta = findAccount(email)
+                if (assigned.any { it.id == cuenta.id }) {
+                    error = "Esa cuenta ya es encargada de este voluntariado"
+                } else {
+                    assigned = assigned + Encargado(cuenta.id, cuenta.nombre, cuenta.apellido, cuenta.email, isMember(cuenta))
+                    emailQuery = ""
+                }
             } catch (e: Exception) {
                 error = e.message ?: "No se pudo buscar el correo"
             }
             searching = false
+        }
+    }
+
+    fun save() {
+        if (saving || loading) return
+        scope.launch {
+            saving = true
+            error = null
+            try {
+                onSave(assigned.map { it.id })
+            } catch (e: Exception) {
+                error = e.message ?: "No se pudo guardar la designación"
+            }
+            saving = false
         }
     }
 
@@ -175,9 +206,16 @@ fun AssignTutorScreen(
                     modifier = Modifier.padding(top = 6.dp),
                 )
             }
+            Text(
+                "Si la cuenta no pertenece a la organización queda como tutor externo: conserva sus permisos de voluntario.",
+                fontFamily = Outfit,
+                fontSize = 11.sp,
+                color = T.textMuted,
+                modifier = Modifier.padding(top = 6.dp),
+            )
             Spacer(Modifier.height(16.dp))
             Text(
-                "${assigned.size} tutores designados",
+                if (loading) "Cargando tutores..." else "${assigned.size} tutores designados",
                 fontFamily = SpaceGrotesk,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
@@ -189,7 +227,7 @@ fun AssignTutorScreen(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp),
         ) {
-            items(assigned.entries.toList()) { (email, name) ->
+            items(assigned, key = { it.id }) { encargado ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -201,31 +239,32 @@ fun AssignTutorScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            name,
+                            encargado.nombreCompleto,
                             fontFamily = SpaceGrotesk,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             color = T.textPrimary,
                         )
                         Text(
-                            email,
+                            encargado.email,
                             fontFamily = Outfit,
                             fontSize = 11.sp,
                             color = T.textMuted,
                         )
                     }
+                    val badgeColor = if (encargado.miembro) T.green else T.coral
                     Text(
-                        "Tutor",
+                        if (encargado.miembro) "Miembro" else "Externo",
                         fontFamily = SpaceGrotesk,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 10.sp,
-                        color = T.green,
+                        color = badgeColor,
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(T.green.copy(alpha = 0.15f))
+                            .background(badgeColor.copy(alpha = 0.15f))
                             .padding(horizontal = 8.dp, vertical = 3.dp),
                     )
-                    IconButton(onClick = { assigned = assigned - email }) {
+                    IconButton(onClick = { assigned = assigned.filter { it.id != encargado.id } }) {
                         Icon(Icons.Filled.Close, contentDescription = "Quitar", tint = T.textSubtle, modifier = Modifier.size(18.dp))
                     }
                 }
@@ -233,7 +272,8 @@ fun AssignTutorScreen(
         }
 
         Button(
-            onClick = { onSave(assigned.map { (email, name) -> "$email|$name" }.toSet()) },
+            onClick = { save() },
+            enabled = !saving && !loading,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(20.dp)
@@ -241,12 +281,16 @@ fun AssignTutorScreen(
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = T.coral),
         ) {
-            Text(
-                "Guardar designación",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 15.sp,
-            )
+            if (saving) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            } else {
+                Text(
+                    "Guardar designación",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
+                )
+            }
         }
     }
 }

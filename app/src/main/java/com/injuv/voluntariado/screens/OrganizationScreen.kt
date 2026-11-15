@@ -43,6 +43,8 @@ import com.injuv.voluntariado.components.MenuIconButton
 import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.data.OrgProfile
 import com.injuv.voluntariado.data.SampleData
+import com.injuv.voluntariado.data.api.Encargado
+import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -53,10 +55,13 @@ fun OrganizationScreen(
     onEdit: () -> Unit,
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
-    designations: Map<Int, Set<String>> = emptyMap(),
+    /** Voluntariados reales de la organización (GET /oportunidades/mias). */
+    oportunidades: List<Oportunidad> = emptyList(),
+    /** Encargados de cada voluntariado, los mismos que se ven en la web. */
+    encargados: Map<Int, List<Encargado>> = emptyMap(),
+    loadError: String? = null,
     onAssignTutor: (Int) -> Unit = {},
     onViewAttendance: (Int) -> Unit = {},
-    resolveName: (String) -> String = { it },
 ) {
     val T = LocalAppColors.current
     val displayName = org.name.ifBlank { "Mi organización" }
@@ -102,7 +107,7 @@ fun OrganizationScreen(
                         Text("Perfil de organización", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
                         Spacer(Modifier.height(18.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            OrgStat("${SampleData.opportunities.size}", "Programas")
+                            OrgStat("${oportunidades.size}", "Programas")
                             OrgStat("${SampleData.tutorRoster.size}", "Voluntarios")
                             OrgStat("${SampleData.news.size}", "Noticias")
                         }
@@ -160,8 +165,20 @@ fun OrganizationScreen(
             )
         }
 
-        items(SampleData.opportunities) { opportunity ->
-            val assigned = designations[opportunity.id].orEmpty()
+        if (loadError != null || oportunidades.isEmpty()) {
+            item {
+                Text(
+                    loadError ?: "Tu organización aún no publica voluntariados.",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = if (loadError != null) T.coral else T.textSubtle,
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                )
+            }
+        }
+
+        items(oportunidades, key = { it.id }) { opportunity ->
+            val assigned = encargados[opportunity.id].orEmpty()
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -174,14 +191,14 @@ fun OrganizationScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        opportunity.title,
+                        opportunity.titulo,
                         fontFamily = SpaceGrotesk,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = T.textPrimary,
                     )
                     Text(
-                        "${opportunity.hours}h · ${opportunity.spots} cupos",
+                        "${opportunity.horas_voluntariado ?: 0}h · ${opportunity.cupo_maximo?.let { "$it cupos" } ?: "Sin límite de cupos"}",
                         fontFamily = Outfit,
                         fontSize = 11.sp,
                         color = T.textMuted,
@@ -189,7 +206,7 @@ fun OrganizationScreen(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         if (assigned.isEmpty()) "Sin tutor designado — toca para asignar"
-                        else "Tutores: ${assigned.map(resolveName).joinToString(", ")}",
+                        else "Tutores: ${assigned.joinToString(", ") { it.nombreCompleto }}",
                         fontFamily = Outfit,
                         fontSize = 11.sp,
                         color = if (assigned.isEmpty()) T.textSubtle else T.green,

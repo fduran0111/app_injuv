@@ -42,7 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.FilterChipsRow
-import com.injuv.voluntariado.data.SampleData
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -54,8 +53,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
-    isTutor: Boolean = false,
-    onTutorChange: (Boolean) -> Unit = {},
+    /** Voluntariados donde el usuario es encargado (id → título), según la API. */
+    tutorPrograms: List<Pair<Int, String>> = emptyList(),
     tutorProgramId: Int = 0,
     onTutorProgramChange: (Int) -> Unit = {},
     isOrg: Boolean = false,
@@ -126,24 +125,15 @@ fun SettingsScreen(
                         color = T.textPrimary,
                     )
                     Text(
-                        if (isTutor) "Panel de tutor activado" else "Gestiona tu oportunidad",
+                        if (tutorPrograms.isNotEmpty()) "Designado en ${tutorPrograms.size} voluntariado(s)"
+                        else "Aún no te designan como tutor",
                         fontFamily = Outfit,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
                 }
-                Switch(
-                    checked = isTutor,
-                    onCheckedChange = onTutorChange,
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = T.coral,
-                        uncheckedThumbColor = Color.White,
-                        uncheckedTrackColor = T.textSubtle,
-                    ),
-                )
             }
-            if (isTutor) {
+            if (tutorPrograms.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "Tu oportunidad",
@@ -152,12 +142,12 @@ fun SettingsScreen(
                     color = T.textMuted,
                 )
                 Spacer(Modifier.height(8.dp))
-                val selectedProgram = SampleData.opportunities.find { it.id == tutorProgramId }
+                val selectedProgram = tutorPrograms.find { it.first == tutorProgramId } ?: tutorPrograms.first()
                 FilterChipsRow(
-                    options = SampleData.opportunities.map { it.title },
-                    selected = selectedProgram?.title ?: SampleData.opportunities.first().title,
+                    options = tutorPrograms.map { it.second },
+                    selected = selectedProgram.second,
                     onSelect = { title ->
-                        SampleData.opportunities.find { it.title == title }?.let { onTutorProgramChange(it.id) }
+                        tutorPrograms.find { it.second == title }?.let { onTutorProgramChange(it.first) }
                     },
                 )
             }

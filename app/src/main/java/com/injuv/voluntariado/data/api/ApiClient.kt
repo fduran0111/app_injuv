@@ -68,6 +68,7 @@ object ApiClient {
     // ---------- URLs de archivos (imágenes y descargas) ----------
     fun fotoUsuario(userId: Int, version: String?): String = "${baseUrl}usuarios/$userId/foto" + (version?.let { "?v=$it" } ?: "")
     fun logoOrganizacion(orgId: Int): String = "${baseUrl}organizaciones/$orgId/logo"
+    fun imagenOportunidad(oportunidadId: Int): String = "${baseUrl}oportunidades/$oportunidadId/imagen"
     fun imagenNoticia(archivo: String): String = "${baseUrl}noticias/imagen/$archivo"
     fun descargaDocumento(doc: Documento): String = "${baseUrl}repositorio/${doc.seccion}/${doc.id}/descargar"
     fun certificadoPostulacion(postulacionId: Int): String = "${baseUrl}postulaciones/$postulacionId/certificado"

@@ -182,7 +182,7 @@ enum class BottomNavItem(val route: String, val label: String) {
     Home("home", "Inicio"),
     Applications("applications", "Postular"),
     News("news", "Noticias"),
-    Tutor("tutor_home", "Tutoría"),
+    Tutor("tutor_list", "Tutoría"),
     Forums("forums", "Foros"),
     Org("org", "ONG"),
     Profile("profile", "Perfil"),
