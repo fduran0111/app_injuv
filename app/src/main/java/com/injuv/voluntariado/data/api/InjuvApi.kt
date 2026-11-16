@@ -52,7 +52,7 @@ interface InjuvApi {
 
     /** Administrador: todos los voluntariados de su organización; tutor: los que tiene asignados. */
     @GET("oportunidades/mias")
-    suspend fun oportunidadesMias(): List<Oportunidad>
+    suspend fun oportunidadesMias(@Query("org_id") orgId: Int? = null): List<Oportunidad>
 
     /** Voluntariados donde el usuario es encargado/tutor (designado desde la web o la app). */
     @GET("oportunidades/tutorias")
@@ -69,8 +69,13 @@ interface InjuvApi {
     suspend fun postular(@Path("id") id: Int): PostularResponse
 
     // ---------- Organización (integrantes) ----------
+    /** Todas las organizaciones del usuario: la que administra y las donde es miembro. */
+    @GET("organizaciones/mias")
+    suspend fun misOrganizaciones(): List<OrgResumen>
+
+    /** Sin `orgId`: la organización principal. Con `orgId`: otra organización donde es miembro. */
     @GET("organizaciones/mia")
-    suspend fun miOrganizacion(): OrganizacionDetalle
+    suspend fun miOrganizacion(@Query("org_id") orgId: Int? = null): OrganizacionDetalle
 
     /** Solo el administrador de la organización. */
     @PUT("organizaciones/mia")
@@ -78,7 +83,7 @@ interface InjuvApi {
 
     /** Administrador y miembros de la organización del usuario. */
     @GET("organizaciones/mia/integrantes")
-    suspend fun integrantes(): List<Integrante>
+    suspend fun integrantes(@Query("org_id") orgId: Int? = null): List<Integrante>
 
     @GET("oportunidades/{id}/postulaciones")
     suspend fun postulantes(@Path("id") id: Int): List<PostulacionOrg>

@@ -96,8 +96,22 @@ fun TutorListScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(tutorias, key = { it.id }) { op ->
-                TutoriaCard(op, onClick = { onOpen(op.id) })
+            val grupos = tutorias
+                .groupBy { it.organizacion_nombre.ifBlank { "Sin organización" } }
+                .toSortedMap(String.CASE_INSENSITIVE_ORDER)
+            grupos.forEach { (org, ops) ->
+                item(key = "org_$org") {
+                    Text(
+                        org,
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = T.textMuted,
+                    )
+                }
+                items(ops, key = { it.id }) { op ->
+                    TutoriaCard(op, onClick = { onOpen(op.id) })
+                }
             }
         }
     }
@@ -156,7 +170,7 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${op.horas_voluntariado ?: 0}h · ${op.num_postulaciones} postulantes",
+                "${op.horas_voluntariado ?: 0}h",
                 fontFamily = Outfit,
                 fontSize = 11.sp,
                 color = T.textSubtle,

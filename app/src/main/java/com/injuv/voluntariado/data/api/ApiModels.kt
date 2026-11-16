@@ -225,6 +225,15 @@ data class OrganizacionDetalle(
     val tiene_logo: Boolean = false,
 )
 
+/** GET /organizaciones/mias: una organización del usuario (administrada o membresía). */
+@Serializable
+data class OrgResumen(
+    val id: Int,
+    val nombre: String = "",
+    /** "admin" | "miembro" */
+    val rol: String = "miembro",
+)
+
 /** GET /organizaciones/mia/integrantes: administrador y miembros de la organización. */
 @Serializable
 data class Integrante(

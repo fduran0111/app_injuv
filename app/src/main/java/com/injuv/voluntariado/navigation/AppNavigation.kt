@@ -50,6 +50,7 @@ import com.injuv.voluntariado.data.api.ForoCanal
 import com.injuv.voluntariado.data.api.ForoMensaje
 import com.injuv.voluntariado.data.api.ForoMensajeBody
 import com.injuv.voluntariado.data.api.Integrante
+import com.injuv.voluntariado.data.api.OrgResumen
 import com.injuv.voluntariado.data.api.OrganizacionDetalle
 import com.injuv.voluntariado.data.api.aForumMessage
 import com.injuv.voluntariado.data.api.aOrgProfile
@@ -139,6 +140,8 @@ fun InjuvApp(
     var orgEncargados by remember { mutableStateOf<Map<Int, List<Encargado>>>(emptyMap()) }
     var orgDetalle by remember { mutableStateOf<OrganizacionDetalle?>(null) }
     var integrantes by remember { mutableStateOf<List<Integrante>>(emptyList()) }
+    var misOrgs by remember { mutableStateOf<List<OrgResumen>>(emptyList()) }
+    var orgSelId by remember { mutableStateOf<Int?>(null) }
     var orgError by remember { mutableStateOf<String?>(null) }
     var orgVersion by remember { mutableStateOf(0) }
     var attendanceVersion by remember { mutableStateOf(0) }
@@ -166,29 +169,33 @@ fun InjuvApp(
     }
     LaunchedEffect(usuario?.id) { SessionManager.refrescar() }
     val orgRef = usuario?.organizacion
+    val orgSelIdEff = orgSelId ?: orgRef?.id
+    val rolEnOrg = misOrgs.find { it.id == orgSelIdEff }?.rol ?: orgRef?.rol
     val esSuperTutor = orgRef?.rol == "admin"
+    val esAdminDeSel = rolEnOrg == "admin"
     val isOrgMode = orgRef != null
     // El super tutor puede pasar lista en todos los voluntariados de su organización.
     val tutorPrograms = if (esSuperTutor) orgOportunidades else tutorias
     val isTutorMode = tutorPrograms.isNotEmpty()
-    val tutorPrograma = tutorPrograms.find { it.id == tutorProgramId } ?: tutorPrograms.firstOrNull()
-    val puedePasarLista = { id: Int -> esSuperTutor || tutorias.any { it.id == id } }
-    val orgProfile = orgDetalle?.aOrgProfile() ?: OrgProfile(name = orgRef?.nombre.orEmpty())
+    val puedePasarLista = { id: Int -> esAdminDeSel || tutorias.any { it.id == id } }
+    val orgProfile = orgDetalle?.aOrgProfile()
+        ?: OrgProfile(name = misOrgs.find { it.id == orgSelIdEff }?.nombre ?: orgRef?.nombre.orEmpty())
     LaunchedEffect(usuario?.id, orgVersion) {
         runCatching { ApiClient.call { tutorias() } }.onSuccess { tutorias = it }
+        runCatching { ApiClient.call { misOrganizaciones() } }.onSuccess { misOrgs = it }
     }
-    LaunchedEffect(usuario?.id, orgRef?.id, orgVersion) {
-        if (orgRef == null) {
+    LaunchedEffect(usuario?.id, orgSelIdEff, orgVersion) {
+        if (orgSelIdEff == null) {
             orgDetalle = null
             orgOportunidades = emptyList()
             orgEncargados = emptyMap()
             integrantes = emptyList()
             return@LaunchedEffect
         }
-        runCatching { ApiClient.call { miOrganizacion() } }.onSuccess { orgDetalle = it }
-        runCatching { ApiClient.call { integrantes() } }.onSuccess { integrantes = it }
+        runCatching { ApiClient.call { miOrganizacion(orgSelIdEff) } }.onSuccess { orgDetalle = it }
+        runCatching { ApiClient.call { integrantes(orgSelIdEff) } }.onSuccess { integrantes = it }
         try {
-            val lista = ApiClient.call { oportunidadesMias() }
+            val lista = ApiClient.call { oportunidadesMias(orgSelIdEff) }
             orgOportunidades = lista
             orgEncargados = lista.associate { op ->
                 op.id to runCatching { ApiClient.call { encargados(op.id) } }.getOrDefault(emptyList())
@@ -222,6 +229,14 @@ fun InjuvApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: "home"
     val currentBaseRoute = currentRoute.substringBefore("/")
+
+    // Al entrar a estas pantallas se refrescan las tutorías: si la ONG te acaba de designar,
+    // la pestaña Tutoría aparece sin tener que cerrar sesión.
+    LaunchedEffect(currentBaseRoute) {
+        if (currentBaseRoute in setOf("home", "tutor_home", "forums")) {
+            runCatching { ApiClient.call { tutorias() } }.onSuccess { tutorias = it }
+        }
+    }
 
     var showStatusAlert by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -322,21 +337,16 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                             onNavigate = { route -> navController.navigate(route) },
                             onLogout = { logout() },
-                            tutorPrograms = tutorPrograms.map { it.id to it.titulo },
-                            tutorProgramId = tutorPrograma?.id ?: 0,
-                            onTutorProgramChange = { id ->
-                                session.setTutorProgramId(id)
-                                tutorProgramId = id
-                            },
-                            isSuperTutor = esSuperTutor,
-                            orgName = orgRef?.nombre ?: orgDetalle?.nombre,
                         )
                     }
                     composable("org") {
                         OrganizationScreen(
                             org = orgProfile,
                             onEdit = { navController.navigate("edit_org") },
-                            canManage = esSuperTutor,
+                            canManage = esAdminDeSel,
+                            orgs = misOrgs,
+                            selectedOrgId = orgSelIdEff,
+                            onSelectOrg = { orgSelId = it },
                             memberCount = integrantes.size,
                             tutorDe = tutorias.map { it.id }.toSet(),
                             onShowAlert = onShowAlert,
@@ -363,6 +373,7 @@ fun InjuvApp(
                             programTitle = orgOportunidades.find { it.id == programId }?.titulo ?: "Voluntariado",
                             programId = programId,
                             readOnly = !puedePasarLista(programId),
+                            excludeUserIds = orgOportunidades.find { it.id == programId }?.encargados_ids.orEmpty().toSet() + listOfNotNull(usuario?.id),
                             onSaved = { attendanceVersion++ },
                             onBack = { navController.popBackStack() },
                         )
@@ -428,8 +439,9 @@ fun InjuvApp(
                             Text("Ya no eres tutor de este voluntariado.", modifier = Modifier.padding(24.dp))
                             return@composable
                         }
-                        val roster = rememberCarga(program.id, attendanceVersion) {
-                            ApiClient.call { postulantes(program.id) }.filter { it.participa }
+                        val roster = rememberCarga(program.id, attendanceVersion, usuario?.id) {
+                            val excluidos = program.encargados_ids.toSet() + listOfNotNull(usuario?.id)
+                            ApiClient.call { postulantes(program.id) }.filter { it.participa && it.usuario_id !in excluidos }
                         }
                         val inscritos = roster.datos.orEmpty()
                         TutorDashboardScreen(
@@ -450,6 +462,7 @@ fun InjuvApp(
                         AttendanceRoute(
                             programTitle = tutorPrograms.find { it.id == programId }?.titulo ?: "Voluntariado",
                             programId = programId,
+                            excludeUserIds = tutorPrograms.find { it.id == programId }?.encargados_ids.orEmpty().toSet() + listOfNotNull(usuario?.id),
                             onSaved = { attendanceVersion++ },
                             onBack = { navController.popBackStack() },
                         )
@@ -493,33 +506,20 @@ fun InjuvApp(
                             runCatching { ApiClient.call { foros() } }.onSuccess { foros = it }
                         }
                         ForumsScreen(
-                            forums = foros.map { f ->
+                            forums = foros.filter { !it.es_tutor }.map { f ->
                                 ForumChannel(
                                     id = f.oportunidad_id,
                                     title = f.titulo,
-                                    org = if (f.es_tutor) "${f.organizacion_nombre} · eres tutor" else f.organizacion_nombre,
+                                    org = f.organizacion_nombre,
                                     lastMessage = f.ultimo_mensaje,
                                 )
                             },
                             onOpenForum = { id ->
                                 menuOpen = false
-                                navController.navigate("org_chat/$id")
+                                navController.navigate("forum/$id")
                             },
                             onShowAlert = onShowAlert,
                             onToggleMenu = onToggleMenu,
-                        )
-                    }
-                    composable(
-                        "org_chat/{programId}",
-                        arguments = listOf(navArgument("programId") { type = NavType.IntType }),
-                    ) { entry ->
-                        val programId = entry.arguments?.getInt("programId") ?: 0
-                        ForoRoute(
-                            programId = programId,
-                            programTitle = tituloForo(programId, postulaciones, tutorPrograms, foros),
-                            canal = "chat",
-                            canWrite = true,
-                            onBack = { navController.popBackStack() },
                         )
                     }
                     composable("news") {
@@ -688,13 +688,14 @@ private fun AttendanceRoute(
     programId: Int,
     onBack: () -> Unit,
     readOnly: Boolean = false,
+    excludeUserIds: Set<Int> = emptySet(),
     onSaved: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var saving by remember { mutableStateOf(false) }
-    val carga = rememberCarga(programId) {
-        ApiClient.call { postulantes(programId) }.filter { it.participa }
+    val carga = rememberCarga(programId, excludeUserIds) {
+        ApiClient.call { postulantes(programId) }.filter { it.participa && it.usuario_id !in excludeUserIds }
     }
     EstadoCarga(carga, modifier = Modifier.fillMaxSize()) { lista ->
         AttendanceScreen(

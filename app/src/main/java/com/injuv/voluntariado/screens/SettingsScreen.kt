@@ -22,7 +22,6 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Icon
@@ -40,7 +39,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -52,14 +50,6 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
-    /** Voluntariados donde el usuario es encargado (id → título), según la API. */
-    tutorPrograms: List<Pair<Int, String>> = emptyList(),
-    tutorProgramId: Int = 0,
-    onTutorProgramChange: (Int) -> Unit = {},
-    /** Administrador de la organización ("super tutor"). */
-    isSuperTutor: Boolean = false,
-    /** Organización a la que pertenece la cuenta (null si es voluntario). */
-    orgName: String? = null,
 ) {
     val T = LocalAppColors.current
 
@@ -96,73 +86,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            Text(
-                "Rol",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-            )
-            Spacer(Modifier.height(10.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.Filled.Groups, contentDescription = null, tint = T.coral)
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                ) {
-                    Text(
-                        when {
-                            isSuperTutor -> "Super tutor"
-                            orgName != null -> "Tutor de voluntariado"
-                            else -> "Voluntario"
-                        },
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 15.sp,
-                        color = T.textPrimary,
-                    )
-                    Text(
-                        when {
-                            isSuperTutor -> "Administras $orgName y todos sus voluntariados"
-                            orgName != null && tutorPrograms.isNotEmpty() ->
-                                "Integrante de $orgName · tutor en ${tutorPrograms.size} voluntariado(s)"
-                            orgName != null -> "Integrante de $orgName · aún sin voluntariados asignados"
-                            else -> "Te designan tutor cuando una organización te agrega como integrante"
-                        },
-                        fontFamily = Outfit,
-                        fontSize = 12.sp,
-                        color = T.textMuted,
-                    )
-                }
-            }
-            if (tutorPrograms.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    "Tu oportunidad",
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = T.textMuted,
-                )
-                Spacer(Modifier.height(8.dp))
-                val selectedProgram = tutorPrograms.find { it.first == tutorProgramId } ?: tutorPrograms.first()
-                FilterChipsRow(
-                    options = tutorPrograms.map { it.second },
-                    selected = selectedProgram.second,
-                    onSelect = { title ->
-                        tutorPrograms.find { it.second == title }?.let { onTutorProgramChange(it.first) }
-                    },
-                )
-            }
-
-            Spacer(Modifier.height(22.dp))
             Text(
                 "Cuenta",
                 fontFamily = SpaceGrotesk,
