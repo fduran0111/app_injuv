@@ -52,7 +52,7 @@ interface InjuvApi {
 
     /** Administrador: todos los voluntariados de su organización; tutor: los que tiene asignados. */
     @GET("oportunidades/mias")
-    suspend fun oportunidadesMias(@Query("org_id") orgId: Int? = null): List<Oportunidad>
+    suspend fun oportunidadesMias(): List<Oportunidad>
 
     /** Voluntariados donde el usuario es encargado/tutor (designado desde la web o la app). */
     @GET("oportunidades/tutorias")
@@ -69,13 +69,8 @@ interface InjuvApi {
     suspend fun postular(@Path("id") id: Int): PostularResponse
 
     // ---------- Organización (integrantes) ----------
-    /** Todas las organizaciones del usuario: la que administra y las donde es miembro. */
-    @GET("organizaciones/mias")
-    suspend fun misOrganizaciones(): List<OrgResumen>
-
-    /** Sin `orgId`: la organización principal. Con `orgId`: otra organización donde es miembro. */
     @GET("organizaciones/mia")
-    suspend fun miOrganizacion(@Query("org_id") orgId: Int? = null): OrganizacionDetalle
+    suspend fun miOrganizacion(): OrganizacionDetalle
 
     /** Solo el administrador de la organización. */
     @PUT("organizaciones/mia")
@@ -83,7 +78,7 @@ interface InjuvApi {
 
     /** Administrador y miembros de la organización del usuario. */
     @GET("organizaciones/mia/integrantes")
-    suspend fun integrantes(@Query("org_id") orgId: Int? = null): List<Integrante>
+    suspend fun integrantes(): List<Integrante>
 
     @GET("oportunidades/{id}/postulaciones")
     suspend fun postulantes(@Path("id") id: Int): List<PostulacionOrg>
@@ -106,6 +101,23 @@ interface InjuvApi {
     /** Solo si fue "Seleccionado": "Confirmado" o "No confirmado". */
     @PUT("postulaciones/{id}/confirmacion")
     suspend fun confirmar(@Path("id") id: Int, @Body body: ConfirmacionBody): PostulacionUsuario
+
+    /** Evalúa a la organización al terminar el voluntariado (nota 1-5 + texto + visibilidad). */
+    @PUT("postulaciones/{id}/resena-usuario")
+    suspend fun resenaUsuario(@Path("id") id: Int, @Body body: ResenaUsuarioBody): PostulacionUsuario
+
+    // ---------- Certificados personales ----------
+    /** Sube o reemplaza un certificado personal (PDF emitido hace menos de 6 meses). */
+    @Multipart
+    @POST("usuarios/me/certificados")
+    suspend fun subirCertificadoPersonal(
+        @Part("tipo") tipo: okhttp3.RequestBody,
+        @Part("fecha_emision") fechaEmision: okhttp3.RequestBody,
+        @Part archivo: MultipartBody.Part,
+    ): Usuario
+
+    @DELETE("usuarios/me/certificados/{tipo}")
+    suspend fun eliminarCertificadoPersonal(@Path("tipo") tipo: String): Usuario
 
     // ---------- Contenido público ----------
     @GET("public/estadisticas")

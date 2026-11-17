@@ -17,6 +17,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,7 +51,6 @@ import com.injuv.voluntariado.data.api.ForoCanal
 import com.injuv.voluntariado.data.api.ForoMensaje
 import com.injuv.voluntariado.data.api.ForoMensajeBody
 import com.injuv.voluntariado.data.api.Integrante
-import com.injuv.voluntariado.data.api.OrgResumen
 import com.injuv.voluntariado.data.api.OrganizacionDetalle
 import com.injuv.voluntariado.data.api.aForumMessage
 import com.injuv.voluntariado.data.api.aOrgProfile
@@ -63,6 +63,7 @@ import com.injuv.voluntariado.data.api.Encargado
 import com.injuv.voluntariado.data.api.EncargadosBody
 import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.data.api.PostulacionUsuario
+import com.injuv.voluntariado.data.api.pendienteCalificarOrg
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.ForumChannel
 import com.injuv.voluntariado.data.Opportunity
@@ -77,6 +78,8 @@ import com.injuv.voluntariado.screens.AssignTutorScreen
 import com.injuv.voluntariado.screens.AttendanceScreen
 import com.injuv.voluntariado.screens.RosterEntry
 import com.injuv.voluntariado.screens.AuthScreen
+import com.injuv.voluntariado.screens.AvisoItem
+import com.injuv.voluntariado.screens.CertificadosScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
 import com.injuv.voluntariado.screens.EditOrgScreen
 import com.injuv.voluntariado.screens.EditProfileScreen
@@ -86,6 +89,7 @@ import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
 import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
+import com.injuv.voluntariado.screens.NotificationsScreen
 import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
@@ -140,8 +144,6 @@ fun InjuvApp(
     var orgEncargados by remember { mutableStateOf<Map<Int, List<Encargado>>>(emptyMap()) }
     var orgDetalle by remember { mutableStateOf<OrganizacionDetalle?>(null) }
     var integrantes by remember { mutableStateOf<List<Integrante>>(emptyList()) }
-    var misOrgs by remember { mutableStateOf<List<OrgResumen>>(emptyList()) }
-    var orgSelId by remember { mutableStateOf<Int?>(null) }
     var orgError by remember { mutableStateOf<String?>(null) }
     var orgVersion by remember { mutableStateOf(0) }
     var attendanceVersion by remember { mutableStateOf(0) }
@@ -169,33 +171,28 @@ fun InjuvApp(
     }
     LaunchedEffect(usuario?.id) { SessionManager.refrescar() }
     val orgRef = usuario?.organizacion
-    val orgSelIdEff = orgSelId ?: orgRef?.id
-    val rolEnOrg = misOrgs.find { it.id == orgSelIdEff }?.rol ?: orgRef?.rol
     val esSuperTutor = orgRef?.rol == "admin"
-    val esAdminDeSel = rolEnOrg == "admin"
     val isOrgMode = orgRef != null
     // El super tutor puede pasar lista en todos los voluntariados de su organización.
     val tutorPrograms = if (esSuperTutor) orgOportunidades else tutorias
     val isTutorMode = tutorPrograms.isNotEmpty()
-    val puedePasarLista = { id: Int -> esAdminDeSel || tutorias.any { it.id == id } }
-    val orgProfile = orgDetalle?.aOrgProfile()
-        ?: OrgProfile(name = misOrgs.find { it.id == orgSelIdEff }?.nombre ?: orgRef?.nombre.orEmpty())
+    val puedePasarLista = { id: Int -> esSuperTutor || tutorias.any { it.id == id } }
+    val orgProfile = orgDetalle?.aOrgProfile() ?: OrgProfile(name = orgRef?.nombre.orEmpty())
     LaunchedEffect(usuario?.id, orgVersion) {
         runCatching { ApiClient.call { tutorias() } }.onSuccess { tutorias = it }
-        runCatching { ApiClient.call { misOrganizaciones() } }.onSuccess { misOrgs = it }
     }
-    LaunchedEffect(usuario?.id, orgSelIdEff, orgVersion) {
-        if (orgSelIdEff == null) {
+    LaunchedEffect(usuario?.id, orgRef?.id, orgVersion) {
+        if (orgRef == null) {
             orgDetalle = null
             orgOportunidades = emptyList()
             orgEncargados = emptyMap()
             integrantes = emptyList()
             return@LaunchedEffect
         }
-        runCatching { ApiClient.call { miOrganizacion(orgSelIdEff) } }.onSuccess { orgDetalle = it }
-        runCatching { ApiClient.call { integrantes(orgSelIdEff) } }.onSuccess { integrantes = it }
+        runCatching { ApiClient.call { miOrganizacion() } }.onSuccess { orgDetalle = it }
+        runCatching { ApiClient.call { integrantes() } }.onSuccess { integrantes = it }
         try {
-            val lista = ApiClient.call { oportunidadesMias(orgSelIdEff) }
+            val lista = ApiClient.call { oportunidadesMias() }
             orgOportunidades = lista
             orgEncargados = lista.associate { op ->
                 op.id to runCatching { ApiClient.call { encargados(op.id) } }.getOrDefault(emptyList())
@@ -337,16 +334,75 @@ fun InjuvApp(
                             onBack = { navController.popBackStack() },
                             onNavigate = { route -> navController.navigate(route) },
                             onLogout = { logout() },
+                            certificadosCount = postulaciones.count { it.tiene_certificado } + (usuario?.certificados_personales?.size ?: 0),
+                            novedadesCount = cambios.size,
+                        )
+                    }
+                    composable("certificates") {
+                        // Refresca por si la organización emitió un certificado con la app abierta.
+                        LaunchedEffect(Unit) {
+                            runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { postulaciones = it }
+                            SessionManager.refrescar()
+                        }
+                        CertificadosScreen(
+                            usuario = usuario,
+                            postulaciones = postulaciones,
+                            onBack = { navController.popBackStack() },
+                            onUsuarioActualizado = { SessionManager.actualizarUsuario(it) },
+                        )
+                    }
+                    composable("notifications") {
+                        // Último anuncio del foro de cada voluntariado del usuario.
+                        var avisos by remember { mutableStateOf<List<AvisoItem>>(emptyList()) }
+                        LaunchedEffect(Unit) {
+                            runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
+                                val conocidos = SessionManager.estadosConocidos()
+                                postulaciones = lista
+                                cambios = lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
+                            }
+                            val vistos = SessionManager.avisosVistos()
+                            val canales = runCatching { ApiClient.call { foros() } }.getOrDefault(emptyList())
+                            avisos = canales.mapNotNull { f ->
+                                runCatching { ApiClient.call { foroMensajes(f.oportunidad_id, "anuncios") } }
+                                    .getOrDefault(emptyList())
+                                    .maxByOrNull { it.id }
+                                    ?.let { m ->
+                                        AvisoItem(
+                                            oportunidadId = f.oportunidad_id,
+                                            titulo = f.titulo,
+                                            organizacion = f.organizacion_nombre,
+                                            autor = m.autor_nombre,
+                                            texto = m.texto,
+                                            fecha = m.created_at.orEmpty().take(10),
+                                            mensajeId = m.id,
+                                            esNuevo = m.id > (vistos[f.oportunidad_id] ?: 0),
+                                        )
+                                    }
+                            }
+                        }
+                        // Al salir, todo lo visto queda marcado como leído.
+                        DisposableEffect(Unit) {
+                            onDispose {
+                                SessionManager.guardarEstados(postulaciones)
+                                cambios = emptyList()
+                                avisos.forEach { SessionManager.guardarAvisoVisto(it.oportunidadId, it.mensajeId) }
+                            }
+                        }
+                        NotificationsScreen(
+                            cambios = cambios,
+                            postulaciones = postulaciones,
+                            avisos = avisos,
+                            onBack = { navController.popBackStack() },
+                            onOpenAviso = { id -> navController.navigate("forum/$id") },
+                            pendientesCalificar = postulaciones.filter { it.pendienteCalificarOrg() },
+                            onCalificar = { navController.goTo("profile") },
                         )
                     }
                     composable("org") {
                         OrganizationScreen(
                             org = orgProfile,
                             onEdit = { navController.navigate("edit_org") },
-                            canManage = esAdminDeSel,
-                            orgs = misOrgs,
-                            selectedOrgId = orgSelIdEff,
-                            onSelectOrg = { orgSelId = it },
+                            canManage = esSuperTutor,
                             memberCount = integrantes.size,
                             tutorDe = tutorias.map { it.id }.toSet(),
                             onShowAlert = onShowAlert,

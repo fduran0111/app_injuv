@@ -36,9 +36,20 @@ data class Usuario(
     val foto_version: String? = null,
     val created_at: String? = null,
     val organizacion: OrganizacionRef? = null,
+    val certificados_personales: List<CertificadoPersonal> = emptyList(),
 ) {
     val nombreCompleto: String get() = listOf(nombre, apellido).filter { it.isNotBlank() }.joinToString(" ").ifBlank { email }
 }
+
+/** Certificado personal del usuario (en `Usuario.certificados_personales`). */
+@Serializable
+data class CertificadoPersonal(
+    /** "antecedentes" | "inhabilidades" */
+    val tipo: String = "",
+    val fecha_emision: String = "",
+    val nombre_archivo: String = "",
+    val subido_en: String? = null,
+)
 
 @Serializable
 data class TokenResponse(
@@ -129,6 +140,13 @@ data class PostulacionUsuario(
     val horas_voluntariado: Double = 0.0,
     val tiene_certificado: Boolean = false,
     val calificacion_usuario: Double? = null,
+    /** Reseña y nota que la organización dejó sobre el voluntario (visibles si `resena_org_publica`). */
+    val resena_org: String = "",
+    val resena_org_publica: Boolean = false,
+    val calificacion_org: Double? = null,
+    /** Reseña y nota que el voluntario dejó sobre la organización. */
+    val resena_usuario: String = "",
+    val resena_usuario_publica: Boolean = true,
     val rechazo_participacion: Boolean = false,
     val voluntariado_terminado: Boolean = false,
     val oportunidad_titulo: String = "",
@@ -141,6 +159,15 @@ data class PostulacionUsuario(
 
 @Serializable
 data class ConfirmacionBody(val estado_confirmacion: String)
+
+/** PUT /postulaciones/{id}/resena-usuario: evaluación del voluntario hacia la organización. */
+@Serializable
+data class ResenaUsuarioBody(val resena: String, val calificacion: Double, val es_publica: Boolean)
+
+/** Voluntariado terminado donde la ONG ya evaluó y el voluntario aún no deja su reseña. */
+fun PostulacionUsuario.pendienteCalificarOrg(): Boolean =
+    voluntariado_terminado && estado == "Seleccionado" && !rechazo_participacion &&
+        resena_usuario.isBlank() && (resena_org.isNotBlank() || calificacion_org != null)
 
 @Serializable
 data class Noticia(
@@ -223,15 +250,6 @@ data class OrganizacionDetalle(
     val experiencia_anios: Int? = null,
     val voluntarios_anuales: String = "",
     val tiene_logo: Boolean = false,
-)
-
-/** GET /organizaciones/mias: una organización del usuario (administrada o membresía). */
-@Serializable
-data class OrgResumen(
-    val id: Int,
-    val nombre: String = "",
-    /** "admin" | "miembro" */
-    val rol: String = "miembro",
 )
 
 /** GET /organizaciones/mia/integrantes: administrador y miembros de la organización. */

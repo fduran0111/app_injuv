@@ -45,6 +45,7 @@ import com.injuv.voluntariado.data.api.Noticia
 import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.data.api.formatearHoras
 import com.injuv.voluntariado.data.api.minutosLectura
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
@@ -82,7 +83,7 @@ fun HomeScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     StatPill(value = e?.voluntarios?.let { miles(it) } ?: "—", label = "Voluntarios", modifier = Modifier.weight(1f))
                     StatPill(value = e?.oportunidades?.let { miles(it) } ?: "—", label = "Oportunidades", modifier = Modifier.weight(1f))
-                    StatPill(value = e?.horas?.let { miles(it) } ?: "—", label = "Horas", modifier = Modifier.weight(1f))
+                    StatPill(value = usuario?.horas_voluntariado?.let { formatearHoras(it) } ?: "—", label = "Tus horas", modifier = Modifier.weight(1f))
                 }
             }
         }

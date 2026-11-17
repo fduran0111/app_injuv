@@ -39,13 +39,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.components.MenuIconButton
 import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.data.OrgProfile
 import com.injuv.voluntariado.data.api.Encargado
 import com.injuv.voluntariado.data.api.Oportunidad
-import com.injuv.voluntariado.data.api.OrgResumen
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -68,10 +66,6 @@ fun OrganizationScreen(
     memberCount: Int = 0,
     /** Voluntariados donde el usuario es tutor (puede pasar lista). */
     tutorDe: Set<Int> = emptySet(),
-    /** Organizaciones del usuario (si pertenece a más de una, muestra el selector). */
-    orgs: List<OrgResumen> = emptyList(),
-    selectedOrgId: Int? = null,
-    onSelectOrg: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
     val displayName = org.name.ifBlank { "Mi organización" }
@@ -115,15 +109,6 @@ fun OrganizationScreen(
                         Spacer(Modifier.height(10.dp))
                         Text(displayName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
                         Text(if (canManage) "Super tutor · administrador" else "Tutor · integrante", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-                        if (orgs.size > 1) {
-                            Spacer(Modifier.height(12.dp))
-                            FilterChipsRow(
-                                options = orgs.map { it.nombre },
-                                selected = orgs.find { it.id == selectedOrgId }?.nombre.orEmpty(),
-                                onSelect = { nombre -> orgs.find { it.nombre == nombre }?.let { onSelectOrg(it.id) } },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
                         Spacer(Modifier.height(18.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OrgStat("${oportunidades.size}", "Programas")

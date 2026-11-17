@@ -36,6 +36,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -70,10 +73,12 @@ import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.ApiException
 import com.injuv.voluntariado.data.api.ConfirmacionBody
 import com.injuv.voluntariado.data.api.PostulacionUsuario
+import com.injuv.voluntariado.data.api.ResenaUsuarioBody
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.api.anioDe
 import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.data.api.formatearHoras
+import com.injuv.voluntariado.data.api.pendienteCalificarOrg
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
@@ -112,6 +117,10 @@ fun ProfileScreen(
     val postuladas = todas.filter { it.enProceso() }
     val terminadas = todas.filter { !it.enCurso() && !it.enProceso() && !it.retirada() }
     var retirando by remember { mutableStateOf<PostulacionUsuario?>(null) }
+    // Voluntariados terminados donde la ONG ya evaluó y falta la reseña del voluntario.
+    val pendientesCalificar = todas.filter { it.pendienteCalificarOrg() }
+    var eligiendoCalificar by remember { mutableStateOf(false) }
+    var calificando by remember { mutableStateOf<PostulacionUsuario?>(null) }
 
     fun accion(mensajeOk: String, llamada: suspend () -> Unit) {
         scope.launch {
@@ -424,47 +433,139 @@ fun ProfileScreen(
         }
 
         if (profile.privacy.reviews) {
+            val resenas = todas.filter { it.resena_org_publica && (it.resena_org.isNotBlank() || it.calificacion_org != null) }
             item {
                 ProfileInfoCard(
                     title = "Reseñas y Referencias",
                     icon = Icons.Filled.Star,
                     iconTint = T.yellow,
+                    trailing = if (pendientesCalificar.isNotEmpty()) {
+                        {
+                            Box(
+                                modifier = Modifier
+                                    .clip(CircleShape)
+                                    .background(T.coral)
+                                    .clickable {
+                                        if (pendientesCalificar.size == 1) calificando = pendientesCalificar.first()
+                                        else eligiendoCalificar = true
+                                    }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                            ) {
+                                Text("Calificar", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.White)
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 ) {
-                    Text(
-                        "Aún no tienes reseñas públicas de organizaciones.",
-                        fontFamily = Outfit,
-                        fontSize = 13.sp,
-                        color = T.textMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (resenas.isEmpty()) {
+                        Text(
+                            "Aún no tienes reseñas públicas de organizaciones.",
+                            fontFamily = Outfit,
+                            fontSize = 13.sp,
+                            color = T.textMuted,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    } else {
+                        resenas.forEachIndexed { i, p ->
+                            if (i > 0) Spacer(Modifier.height(10.dp))
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(T.bgBase)
+                                    .padding(12.dp),
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        p.organizacion_nombre,
+                                        fontFamily = SpaceGrotesk,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp,
+                                        color = T.textPrimary,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    p.calificacion_org?.let { nota -> EstrellasResena(nota) }
+                                }
+                                Text(p.oportunidad_titulo, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                                if (p.resena_org.isNotBlank()) {
+                                    Spacer(Modifier.height(6.dp))
+                                    Text(p.resena_org, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                                }
+                                if (p.resena_usuario.isNotBlank() || p.calificacion_usuario != null) {
+                                    Spacer(Modifier.height(8.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Tu evaluación", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = T.textMuted)
+                                        Spacer(Modifier.width(8.dp))
+                                        p.calificacion_usuario?.let { EstrellasResena(it) }
+                                    }
+                                    if (p.resena_usuario.isNotBlank()) {
+                                        Text(p.resena_usuario, fontFamily = Outfit, fontSize = 12.sp, color = T.textSecondary)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
 
         item {
             Spacer(Modifier.height(16.dp))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
-                    .clickable { }
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = null, tint = T.coral, modifier = Modifier.size(22.dp))
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                ) {
-                    Text("Centro de ayuda", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                    Text("Preguntas frecuentes y soporte", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
-                }
-            }
         }
+    }
+
+    // Selector de voluntariado cuando hay más de uno pendiente de calificar.
+    if (eligiendoCalificar) {
+        AlertDialog(
+            onDismissRequest = { eligiendoCalificar = false },
+            title = { Text("¿A qué organización quieres calificar?", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
+            text = {
+                Column {
+                    pendientesCalificar.forEach { p ->
+                        Text(
+                            "${p.organizacion_nombre} · ${p.oportunidad_titulo}",
+                            fontFamily = Outfit,
+                            fontSize = 14.sp,
+                            color = T.textPrimary,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable {
+                                    eligiendoCalificar = false
+                                    calificando = p
+                                }
+                                .padding(vertical = 10.dp, horizontal = 8.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { eligiendoCalificar = false }) { Text("Cancelar") } },
+        )
+    }
+
+    calificando?.let { p ->
+        CalificarOrgDialog(
+            postulacion = p,
+            onDismiss = { calificando = null },
+            onEnviar = { texto, nota, publica ->
+                calificando = null
+                scope.launch {
+                    try {
+                        ApiClient.call { resenaUsuario(p.id, ResenaUsuarioBody(texto, nota, publica)) }
+                        Toast.makeText(context, "Evaluación enviada", Toast.LENGTH_SHORT).show()
+                        carga.recargar()
+                    } catch (e: ApiException) {
+                        Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
+                    }
+                }
+            },
+        )
     }
 
     retirando?.let { p ->
@@ -488,6 +589,7 @@ private fun ProfileInfoCard(
     title: String,
     icon: ImageVector? = null,
     iconTint: Color? = null,
+    trailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     val T = LocalAppColors.current
@@ -510,7 +612,8 @@ private fun ProfileInfoCard(
                 )
                 Spacer(Modifier.width(8.dp))
             }
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary)
+            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
+            trailing?.invoke()
         }
         content()
     }
@@ -668,4 +771,87 @@ private fun HistoryProgramCard(p: PostulacionUsuario, onDescargar: () -> Unit, m
             }
         }
     }
+}
+
+/** Fila de 5 estrellas con la nota que la organización le dio al voluntario. */
+@Composable
+private fun EstrellasResena(nota: Double) {
+    val T = LocalAppColors.current
+    Row {
+        repeat(5) { i ->
+            Icon(
+                Icons.Filled.Star,
+                contentDescription = null,
+                tint = if (i < nota.toInt()) T.yellow else T.textSubtle.copy(alpha = 0.4f),
+                modifier = Modifier.size(14.dp),
+            )
+        }
+    }
+}
+
+/** Diálogo para evaluar a la organización al terminar el voluntariado (nota + texto + visibilidad). */
+@Composable
+private fun CalificarOrgDialog(
+    postulacion: PostulacionUsuario,
+    onDismiss: () -> Unit,
+    onEnviar: (texto: String, nota: Double, publica: Boolean) -> Unit,
+) {
+    val T = LocalAppColors.current
+    var nota by remember { mutableStateOf(0) }
+    var texto by remember { mutableStateOf("") }
+    var publica by remember { mutableStateOf(true) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text("Califica a la organización", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold)
+                Text(postulacion.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+            }
+        },
+        text = {
+            Column {
+                Row {
+                    repeat(5) { i ->
+                        Icon(
+                            Icons.Filled.Star,
+                            contentDescription = "${i + 1} estrellas",
+                            tint = if (i < nota) T.yellow else T.textSubtle.copy(alpha = 0.4f),
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clickable { nota = i + 1 },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = texto,
+                    onValueChange = { texto = it.take(2000) },
+                    label = { Text("Tu reseña") },
+                    placeholder = { Text("Cuenta cómo fue tu experiencia") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Reseña pública", fontFamily = Outfit, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = T.textPrimary)
+                        Text("Visible en el perfil de la organización", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                    }
+                    Switch(
+                        checked = publica,
+                        onCheckedChange = { publica = it },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = T.coral),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = nota > 0 && texto.trim().length >= 3,
+                onClick = { onEnviar(texto.trim(), nota.toDouble(), publica) },
+            ) { Text("Enviar", color = T.coral) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
 }

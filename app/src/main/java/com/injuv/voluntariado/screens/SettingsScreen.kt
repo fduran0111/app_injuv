@@ -50,6 +50,10 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onNavigate: (String) -> Unit = {},
     onLogout: () -> Unit = {},
+    /** Certificados de voluntariado + personales, para el subtítulo. */
+    certificadosCount: Int = 0,
+    /** Cambios de estado sin revisar, para el subtítulo de Notificaciones. */
+    novedadesCount: Int = 0,
 ) {
     val T = LocalAppColors.current
 
@@ -104,13 +108,17 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Filled.WorkspacePremium,
                 title = "Mis certificados",
-                subtitle = "4 certificados disponibles",
+                subtitle = if (certificadosCount == 0) "De voluntariados y personales"
+                    else "$certificadosCount ${if (certificadosCount == 1) "certificado disponible" else "certificados disponibles"}",
+                onClick = { onNavigate("certificates") },
             )
             Spacer(Modifier.height(10.dp))
             SettingsRow(
                 icon = Icons.Filled.Notifications,
                 title = "Notificaciones",
-                subtitle = "Alertas de postulaciones",
+                subtitle = if (novedadesCount > 0) "$novedadesCount ${if (novedadesCount == 1) "novedad" else "novedades"} sin revisar"
+                    else "Alertas de postulaciones y anuncios",
+                onClick = { onNavigate("notifications") },
             )
             Spacer(Modifier.height(10.dp))
             SettingsRow(

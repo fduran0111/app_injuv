@@ -78,6 +78,25 @@ private fun separarNombre(completo: String, usuario: Usuario): Pair<String, Stri
     }
 }
 
+/**
+ * Sube un certificado personal (`antecedentes` / `inhabilidades`) como PDF. La plataforma
+ * exige `fecha_emision` (yyyy-MM-dd) de los últimos 6 meses y reemplaza el del mismo tipo.
+ */
+suspend fun subirCertPersonal(context: Context, tipo: String, fechaEmision: String, uri: Uri): Usuario {
+    val resolver = context.contentResolver
+    val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+        ?: throw ApiException("No se pudo leer el archivo seleccionado.")
+    val nombre = resolver.query(uri, null, null, null, null)?.use { cursor ->
+        val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+        if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
+    }?.takeIf { it.isNotBlank() } ?: "certificado.pdf"
+    val texto = "text/plain".toMediaTypeOrNull()
+    val parte = MultipartBody.Part.createFormData("archivo", nombre, bytes.toRequestBody("application/pdf".toMediaTypeOrNull()))
+    return ApiClient.call {
+        subirCertificadoPersonal(tipo.toRequestBody(texto), fechaEmision.toRequestBody(texto), parte)
+    }
+}
+
 private fun fotoComoParte(context: Context, uri: Uri): MultipartBody.Part {
     val resolver = context.contentResolver
     val mime = resolver.getType(uri) ?: "image/jpeg"

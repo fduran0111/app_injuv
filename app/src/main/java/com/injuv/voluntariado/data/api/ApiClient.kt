@@ -72,6 +72,7 @@ object ApiClient {
     fun imagenNoticia(archivo: String): String = "${baseUrl}noticias/imagen/$archivo"
     fun descargaDocumento(doc: Documento): String = "${baseUrl}repositorio/${doc.seccion}/${doc.id}/descargar"
     fun certificadoPostulacion(postulacionId: Int): String = "${baseUrl}postulaciones/$postulacionId/certificado"
+    fun certificadoPersonal(tipo: String): String = "${baseUrl}usuarios/me/certificados/$tipo"
 
     /**
      * Ejecuta una llamada y traduce los errores a [ApiException] con el mensaje del backend
