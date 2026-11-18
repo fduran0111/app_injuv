@@ -31,22 +31,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.EstadoPostulacionChip
+import com.injuv.voluntariado.data.AvisoItem
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
-
-/** Último anuncio publicado en el foro de un voluntariado (canal "anuncios"). */
-data class AvisoItem(
-    val oportunidadId: Int,
-    val titulo: String,
-    val organizacion: String,
-    val autor: String,
-    val texto: String,
-    val fecha: String,
-    val mensajeId: Int,
-    val esNuevo: Boolean,
-)
 
 /**
  * Notificaciones: cambios de estado de tus postulaciones, anuncios de los tutores en los
@@ -62,10 +51,16 @@ fun NotificationsScreen(
     /** Terminados donde la ONG ya evaluó y falta la reseña del voluntario. */
     pendientesCalificar: List<PostulacionUsuario> = emptyList(),
     onCalificar: () -> Unit = {},
+    /** Estado anterior de cada postulación con novedad (para mostrar "de X a Y"). */
+    previos: Map<Int, String> = emptyMap(),
+    /** Preferencia "resumen": muestra el estado actual de las postulaciones activas. */
+    mostrarEstado: Boolean = true,
+    /** Preferencia general apagada: se avisa y no se muestra nada. */
+    desactivadas: Boolean = false,
 ) {
     val T = LocalAppColors.current
-    val activas = postulaciones.filter { it.estado != "Declinada por usuario" && !it.voluntariado_terminado }
-    val hayAlgo = cambios.isNotEmpty() || avisos.isNotEmpty() || activas.isNotEmpty() || pendientesCalificar.isNotEmpty()
+    val activas = if (mostrarEstado) postulaciones.filter { it.estado != "Declinada por usuario" && !it.voluntariado_terminado } else emptyList()
+    val hayAlgo = !desactivadas && (cambios.isNotEmpty() || avisos.isNotEmpty() || activas.isNotEmpty() || pendientesCalificar.isNotEmpty())
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -100,7 +95,14 @@ fun NotificationsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            if (!hayAlgo) {
+            if (desactivadas) {
+                Text(
+                    "Tienes las notificaciones desactivadas. Actívalas en Configuración → Notificaciones para recibir alertas.",
+                    fontFamily = Outfit,
+                    fontSize = 13.sp,
+                    color = T.textMuted,
+                )
+            } else if (!hayAlgo) {
                 Text(
                     "No tienes notificaciones por ahora. Cuando cambie el estado de una postulación o un tutor publique un anuncio, aparecerá aquí.",
                     fontFamily = Outfit,
@@ -144,6 +146,16 @@ fun NotificationsScreen(
                             EstadoPostulacionChip(p.estado)
                             Spacer(Modifier.width(8.dp))
                             BadgeNuevo()
+                        }
+                        val anterior = previos[p.id].orEmpty()
+                        if (anterior.isNotBlank() && anterior != p.estado) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "De “$anterior” a “${p.estado}”",
+                                fontFamily = Outfit,
+                                fontSize = 11.sp,
+                                color = T.coral,
+                            )
                         }
                     }
                 }

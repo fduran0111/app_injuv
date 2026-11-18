@@ -23,6 +23,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.EstadoCarga
@@ -49,6 +52,8 @@ import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.ApiException
 import com.injuv.voluntariado.data.api.MiPostulacion
 import com.injuv.voluntariado.data.api.Oportunidad
+import com.injuv.voluntariado.data.api.PostularBody
+import com.injuv.voluntariado.data.api.PreguntaItem
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.data.api.formatearPeriodo
@@ -90,16 +95,17 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
     val scope = rememberCoroutineScope()
     val usuario by SessionManager.user.collectAsState()
     var confirmando by remember { mutableStateOf(false) }
+    var preguntando by remember { mutableStateOf(false) }
     var postulando by remember { mutableStateOf(false) }
     var miPostulacion by remember(opportunity.id) {
         mutableStateOf<MiPostulacion?>(opportunity.mi_postulacion?.takeUnless { it.retirada() })
     }
 
-    fun enviarPostulacion() {
+    fun enviarPostulacion(respuestas: Map<String, String> = emptyMap()) {
         postulando = true
         scope.launch {
             try {
-                val r = ApiClient.call { this.postular(opportunity.id) }
+                val r = ApiClient.call { this.postular(opportunity.id, PostularBody(respuestas)) }
                 miPostulacion = MiPostulacion(r.id, r.estado)
                 Toast.makeText(context, "¡Postulación enviada! Te avisaremos cuando la organización la revise.", Toast.LENGTH_LONG).show()
                 onPostulado()
@@ -109,6 +115,17 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
                 postulando = false
             }
         }
+    }
+
+    if (preguntando) {
+        PreguntasScreen(
+            oportunidadTitulo = opportunity.titulo,
+            preguntas = opportunity.preguntas,
+            postulando = postulando,
+            onBack = { preguntando = false },
+            onEnviar = { enviarPostulacion(it) },
+        )
+        return
     }
 
     Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -238,7 +255,9 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
                 !esVoluntario -> AvisoSinPostular("Solo las cuentas de voluntario pueden postular.")
                 else -> {
                     Button(
-                        onClick = { confirmando = true },
+                        onClick = {
+                            if (opportunity.preguntas.isEmpty()) confirmando = true else preguntando = true
+                        },
                         enabled = !postulando,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -280,6 +299,176 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
             dismissButton = { TextButton(onClick = { confirmando = false }) { Text("Cancelar") } },
         )
     }
+
+}
+
+/**
+ * Formulario a pantalla completa con las preguntas de la convocatoria: las obligatorias se
+ * exigen antes de poder postular y las respuestas solo las ve la organización.
+ */
+@Composable
+private fun PreguntasScreen(
+    oportunidadTitulo: String,
+    preguntas: List<PreguntaItem>,
+    postulando: Boolean,
+    onBack: () -> Unit,
+    onEnviar: (Map<String, String>) -> Unit,
+) {
+    val T = LocalAppColors.current
+    var respuestas by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    val respondidas = preguntas.count { !respuestas[it.id].isNullOrBlank() }
+    val completo = preguntas.all { !it.obligatoria || !respuestas[it.id].isNullOrBlank() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(T.bgBase),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(T.bgHeaderGradient))
+                .padding(horizontal = 8.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
+            }
+            Column(modifier = Modifier.padding(end = 16.dp)) {
+                Text(
+                    "Postular",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                    color = Color.White,
+                )
+                Text(
+                    oportunidadTitulo,
+                    fontFamily = Outfit,
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.85f),
+                    maxLines = 1,
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+        ) {
+            Text(
+                "La organización pide estas respuestas antes de postular. Solo ella las verá.",
+                fontFamily = Outfit,
+                fontSize = 13.sp,
+                color = T.textMuted,
+            )
+            preguntas.forEachIndexed { index, q ->
+                Spacer(Modifier.height(18.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        "${index + 1}.",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp,
+                        color = T.coral,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        q.texto + if (q.obligatoria) " *" else "",
+                        fontFamily = Outfit,
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp,
+                        color = T.textPrimary,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                when (q.tipo) {
+                    "alternativas" -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        q.opciones.forEach { opcion ->
+                            OpcionRespuesta(
+                                texto = opcion,
+                                seleccionada = respuestas[q.id] == opcion,
+                                onClick = { respuestas = respuestas + (q.id to opcion) },
+                            )
+                        }
+                    }
+                    "texto" -> OutlinedTextField(
+                        value = respuestas[q.id] ?: "",
+                        onValueChange = { respuestas = respuestas + (q.id to it.take(1000)) },
+                        placeholder = { Text("Escribe tu respuesta…", fontFamily = Outfit, fontSize = 13.sp) },
+                        minLines = 3,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = T.coral, cursorColor = T.coral),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    else -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Sí", "No").forEach { opcion ->
+                            OpcionRespuesta(
+                                texto = opcion,
+                                seleccionada = respuestas[q.id] == opcion,
+                                onClick = { respuestas = respuestas + (q.id to opcion) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.linearGradient(T.bgCardGradient))
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+        ) {
+            Text(
+                "$respondidas de ${preguntas.size} respondidas",
+                fontFamily = Outfit,
+                fontSize = 12.sp,
+                color = T.textMuted,
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(
+                onClick = { onEnviar(respuestas) },
+                enabled = completo && !postulando,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+            ) {
+                if (postulando) {
+                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                } else {
+                    Text(
+                        if (completo) "Postular" else "Responde las obligatorias (*)",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 15.sp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OpcionRespuesta(texto: String, seleccionada: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val T = LocalAppColors.current
+    Text(
+        texto,
+        fontFamily = Outfit,
+        fontSize = 13.sp,
+        color = if (seleccionada) T.coral else T.textSecondary,
+        textAlign = TextAlign.Center,
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(if (seleccionada) T.coral.copy(alpha = 0.15f) else T.surface1)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    )
 }
 
 @Composable

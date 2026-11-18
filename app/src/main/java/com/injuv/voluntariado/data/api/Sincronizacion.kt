@@ -21,7 +21,7 @@ suspend fun guardarAsistencia(postulantes: List<PostulacionOrg>, presentes: Set<
     for (p in postulantes) {
         val nuevo = if (p.id in presentes) "SI" else "No"
         if (p.asistencia_actividad != nuevo) {
-            ApiClient.call { registrarAsistencia(p.id, AsistenciaBody(nuevo)) }
+            ApiClient.call { registrarAsistencia(p.id, AsistenciaBody(asistencia_actividad = nuevo)) }
         }
     }
 }
@@ -30,6 +30,27 @@ suspend fun guardarAsistencia(postulantes: List<PostulacionOrg>, presentes: Set<
 fun presentesIniciales(postulantes: List<PostulacionOrg>): Set<Int> =
     if (postulantes.all { it.asistencia_actividad == "No aplica" }) postulantes.map { it.id }.toSet()
     else postulantes.filter { it.asistencia_actividad == "SI" }.map { it.id }.toSet()
+
+/**
+ * Presentes guardados en el historial de una fecha; `null` si ese día nunca se pasó lista.
+ * Solo devuelve ids que siguen en la lista actual.
+ */
+suspend fun asistenciaDelDia(oportunidadId: Int, fecha: String, roster: List<PostulacionOrg>): Set<Int>? {
+    val registros = ApiClient.call { asistencias(oportunidadId, fecha) }
+    if (registros.isEmpty()) return null
+    val validos = roster.map { it.id }.toSet()
+    return registros.filter { it.presente && it.postulacion_id in validos }.map { it.postulacion_id }.toSet()
+}
+
+/** Guarda la lista de un día en el historial; el backend además actualiza la asistencia a la actividad. */
+suspend fun guardarAsistenciaDia(oportunidadId: Int, fecha: String, roster: List<PostulacionOrg>, presentes: Set<Int>) {
+    ApiClient.call {
+        guardarAsistencias(
+            oportunidadId,
+            AsistenciaDiaBody(fecha, roster.map { AsistenciaRegistro(it.id, it.id in presentes) }),
+        )
+    }
+}
 
 /**
  * Guarda en el backend los datos de la cuenta (nombre, correo, teléfono, ubicación y foto).

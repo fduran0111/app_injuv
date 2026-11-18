@@ -66,7 +66,7 @@ interface InjuvApi {
     suspend fun guardarEncargados(@Path("id") id: Int, @Body body: EncargadosBody): List<Encargado>
 
     @POST("oportunidades/{id}/postular")
-    suspend fun postular(@Path("id") id: Int): PostularResponse
+    suspend fun postular(@Path("id") id: Int, @Body body: PostularBody = PostularBody()): PostularResponse
 
     // ---------- Organización (integrantes) ----------
     @GET("organizaciones/mia")
@@ -85,6 +85,12 @@ interface InjuvApi {
 
     @PATCH("postulaciones/{id}/asistencia")
     suspend fun registrarAsistencia(@Path("id") id: Int, @Body body: AsistenciaBody): PostulacionOrg
+
+    @GET("oportunidades/{id}/asistencias")
+    suspend fun asistencias(@Path("id") id: Int, @Query("fecha") fecha: String): List<AsistenciaRegistro>
+
+    @PUT("oportunidades/{id}/asistencias")
+    suspend fun guardarAsistencias(@Path("id") id: Int, @Body body: AsistenciaDiaBody): AsistenciaDiaResponse
 
     // ---------- Búsqueda de usuarios (organización/admin) ----------
     @GET("usuarios/buscar")

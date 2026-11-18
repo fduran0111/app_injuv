@@ -17,6 +17,7 @@ object SessionManager {
     private const val KEY_USER = "user"
     private const val KEY_ESTADOS = "estados_postulaciones"
     private const val KEY_AVISOS = "avisos_vistos"
+    private const val KEY_CALIFICAR = "calificar_recordadas"
 
     private lateinit var prefs: SharedPreferences
 
@@ -91,5 +92,16 @@ object SessionManager {
             .toMutableSet()
         actuales.add("$oportunidadId|$mensajeId")
         prefs.edit().putStringSet(KEY_AVISOS, actuales).apply()
+    }
+
+    // ---------- Recordatorios de calificación ya mostrados ----------
+
+    /** Ids de postulaciones cuya invitación a calificar a la ONG ya se mostró. */
+    fun calificarVistos(): Set<Int> =
+        prefs.getStringSet(KEY_CALIFICAR, emptySet()).orEmpty().mapNotNull { it.toIntOrNull() }.toSet()
+
+    fun guardarCalificarVisto(postulacionId: Int) {
+        val actuales = prefs.getStringSet(KEY_CALIFICAR, emptySet()).orEmpty()
+        prefs.edit().putStringSet(KEY_CALIFICAR, actuales + postulacionId.toString()).apply()
     }
 }

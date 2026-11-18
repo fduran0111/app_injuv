@@ -46,6 +46,8 @@ import com.injuv.voluntariado.components.StatusAlertSheet
 import com.injuv.voluntariado.components.bottomNavIcon
 import com.injuv.voluntariado.components.EstadoCarga
 import com.injuv.voluntariado.components.rememberCarga
+import com.injuv.voluntariado.data.AttendancePreferences
+import com.injuv.voluntariado.data.NotificationPreferences
 import com.injuv.voluntariado.data.OrgProfile
 import com.injuv.voluntariado.data.api.ForoCanal
 import com.injuv.voluntariado.data.api.ForoMensaje
@@ -55,7 +57,8 @@ import com.injuv.voluntariado.data.api.OrganizacionDetalle
 import com.injuv.voluntariado.data.api.aForumMessage
 import com.injuv.voluntariado.data.api.aOrgProfile
 import com.injuv.voluntariado.data.api.conCambios
-import com.injuv.voluntariado.data.api.guardarAsistencia
+import com.injuv.voluntariado.data.api.asistenciaDelDia
+import com.injuv.voluntariado.data.api.guardarAsistenciaDia
 import com.injuv.voluntariado.data.api.guardarPerfil
 import com.injuv.voluntariado.data.api.presentesIniciales
 import com.injuv.voluntariado.data.api.ApiClient
@@ -78,7 +81,7 @@ import com.injuv.voluntariado.screens.AssignTutorScreen
 import com.injuv.voluntariado.screens.AttendanceScreen
 import com.injuv.voluntariado.screens.RosterEntry
 import com.injuv.voluntariado.screens.AuthScreen
-import com.injuv.voluntariado.screens.AvisoItem
+import com.injuv.voluntariado.data.AvisoItem
 import com.injuv.voluntariado.screens.CertificadosScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
 import com.injuv.voluntariado.screens.EditOrgScreen
@@ -89,6 +92,7 @@ import com.injuv.voluntariado.screens.HomeScreen
 import com.injuv.voluntariado.screens.LibraryScreen
 import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
+import com.injuv.voluntariado.screens.NotificationSettingsScreen
 import com.injuv.voluntariado.screens.NotificationsScreen
 import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
@@ -98,6 +102,9 @@ import com.injuv.voluntariado.screens.TutorListScreen
 import com.injuv.voluntariado.screens.computeAgeYears
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -203,15 +210,62 @@ fun InjuvApp(
         }
     }
 
-    // Aviso de cambios de estado: compara las postulaciones actuales con las últimas vistas.
+    // Aviso de cambios de estado y anuncios: compara lo que llega con lo último visto.
     var cambios by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
+    var cambiosPrevios by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     var postulaciones by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
+    var avisosNoLeidos by remember { mutableStateOf<List<AvisoItem>>(emptyList()) }
+    var calificarPendientes by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
+    var showStatusAlert by remember { mutableStateOf(false) }
+    val notifPrefs = remember { NotificationPreferences(context) }
+
+    // Cada 30 s refresca postulaciones y anuncios de foros; si llega algo nuevo, el aviso se abre solo.
     LaunchedEffect(usuario?.id) {
-        runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
-            val conocidos = SessionManager.estadosConocidos()
-            postulaciones = lista
-            cambios = if (conocidos.isEmpty()) emptyList() else lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
-            if (conocidos.isEmpty()) SessionManager.guardarEstados(lista)
+        if (usuario == null) return@LaunchedEffect
+        while (true) {
+            runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
+                val conocidos = SessionManager.estadosConocidos()
+                val nuevos = if (conocidos.isEmpty()) emptyList()
+                    else lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
+                val llegaron = nuevos.any { n -> cambios.none { it.id == n.id } }
+                postulaciones = lista
+                cambios = nuevos
+                cambiosPrevios = nuevos.associate { it.id to (conocidos[it.id] ?: "") }
+                if (conocidos.isEmpty()) SessionManager.guardarEstados(lista)
+                if (llegaron && notifPrefs.permiteEstados()) showStatusAlert = true
+                // Voluntariados terminados pendientes de tu reseña a la organización.
+                val recordadas = SessionManager.calificarVistos()
+                val nuevasCalificar = lista.filter { it.pendienteCalificarOrg() && it.id !in recordadas }
+                if (nuevasCalificar.any { n -> calificarPendientes.none { it.id == n.id } } && notifPrefs.permiteCalificar()) {
+                    showStatusAlert = true
+                }
+                calificarPendientes = nuevasCalificar
+            }
+            val vistos = SessionManager.avisosVistos()
+            val canales = runCatching { ApiClient.call { foros() } }.getOrDefault(emptyList())
+            foros = canales
+            val nuevosAvisos = canales.mapNotNull { f ->
+                runCatching { ApiClient.call { foroMensajes(f.oportunidad_id, "anuncios") } }
+                    .getOrDefault(emptyList())
+                    .maxByOrNull { it.id }
+                    ?.takeIf { it.id > (vistos[f.oportunidad_id] ?: 0) }
+                    ?.let { m ->
+                        AvisoItem(
+                            oportunidadId = f.oportunidad_id,
+                            titulo = f.titulo,
+                            organizacion = f.organizacion_nombre,
+                            autor = m.autor_nombre,
+                            texto = m.texto,
+                            fecha = m.created_at.orEmpty().take(10),
+                            mensajeId = m.id,
+                            esNuevo = true,
+                        )
+                    }
+            }
+            val llegaronAvisos = nuevosAvisos.any { n -> avisosNoLeidos.none { it.mensajeId == n.mensajeId } }
+            avisosNoLeidos = nuevosAvisos
+            if (llegaronAvisos && notifPrefs.permiteAnuncios()) showStatusAlert = true
+            delay(30_000)
         }
     }
 
@@ -235,7 +289,6 @@ fun InjuvApp(
         }
     }
 
-    var showStatusAlert by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
     val T = LocalAppColors.current
     val onShowAlert = { showStatusAlert = true }
@@ -328,6 +381,7 @@ fun InjuvApp(
                         )
                     }
                     composable("settings") {
+                        val notifPrefs = remember { NotificationPreferences(context) }
                         SettingsScreen(
                             isDarkTheme = isDarkTheme,
                             onDarkThemeChange = onDarkThemeChange,
@@ -335,7 +389,14 @@ fun InjuvApp(
                             onNavigate = { route -> navController.navigate(route) },
                             onLogout = { logout() },
                             certificadosCount = postulaciones.count { it.tiene_certificado } + (usuario?.certificados_personales?.size ?: 0),
-                            novedadesCount = cambios.size,
+                            notificacionesSubtitle = if (!notifPrefs.activas) "Desactivadas"
+                                else "Activadas · ${notifPrefs.tiposActivos()} ${if (notifPrefs.tiposActivos() == 1) "tipo" else "tipos"}",
+                        )
+                    }
+                    composable("notification_settings") {
+                        NotificationSettingsScreen(
+                            onBack = { navController.popBackStack() },
+                            onVerNotificaciones = { navController.navigate("notifications") },
                         )
                     }
                     composable("certificates") {
@@ -359,6 +420,7 @@ fun InjuvApp(
                                 val conocidos = SessionManager.estadosConocidos()
                                 postulaciones = lista
                                 cambios = lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
+                                cambiosPrevios = cambios.associate { it.id to (conocidos[it.id] ?: "") }
                             }
                             val vistos = SessionManager.avisosVistos()
                             val canales = runCatching { ApiClient.call { foros() } }.getOrDefault(emptyList())
@@ -388,14 +450,18 @@ fun InjuvApp(
                                 avisos.forEach { SessionManager.guardarAvisoVisto(it.oportunidadId, it.mensajeId) }
                             }
                         }
+                        val notifPrefs = remember { NotificationPreferences(context) }
                         NotificationsScreen(
-                            cambios = cambios,
+                            cambios = if (notifPrefs.permiteEstados()) cambios else emptyList(),
+                            previos = cambiosPrevios,
                             postulaciones = postulaciones,
-                            avisos = avisos,
+                            avisos = if (notifPrefs.permiteAnuncios()) avisos else emptyList(),
                             onBack = { navController.popBackStack() },
                             onOpenAviso = { id -> navController.navigate("forum/$id") },
-                            pendientesCalificar = postulaciones.filter { it.pendienteCalificarOrg() },
+                            pendientesCalificar = if (notifPrefs.permiteCalificar()) postulaciones.filter { it.pendienteCalificarOrg() } else emptyList(),
                             onCalificar = { navController.goTo("profile") },
+                            mostrarEstado = notifPrefs.permiteResumen(),
+                            desactivadas = !notifPrefs.activas,
                         )
                     }
                     composable("org") {
@@ -647,13 +713,28 @@ fun InjuvApp(
 
     if (showStatusAlert) {
         StatusAlertSheet(
-            cambios = cambios,
+            cambios = if (notifPrefs.permiteEstados()) cambios else emptyList(),
+            previos = cambiosPrevios,
             postulaciones = postulaciones,
+            avisos = if (notifPrefs.permiteAnuncios()) avisosNoLeidos else emptyList(),
+            mostrarResumen = notifPrefs.permiteResumen(),
+            porCalificar = if (notifPrefs.permiteCalificar()) calificarPendientes else emptyList(),
+            onCalificar = {
+                calificarPendientes.forEach { SessionManager.guardarCalificarVisto(it.id) }
+                calificarPendientes = emptyList()
+                showStatusAlert = false
+                navController.goTo("profile")
+            },
             onClose = {
                 showStatusAlert = false
-                // Al ver el aviso, los estados actuales pasan a ser los "conocidos".
+                // Al ver el aviso, los estados, anuncios y recordatorios pasan a ser los "conocidos".
                 SessionManager.guardarEstados(postulaciones)
                 cambios = emptyList()
+                cambiosPrevios = emptyMap()
+                avisosNoLeidos.forEach { SessionManager.guardarAvisoVisto(it.oportunidadId, it.mensajeId) }
+                avisosNoLeidos = emptyList()
+                calificarPendientes.forEach { SessionManager.guardarCalificarVisto(it.id) }
+                calificarPendientes = emptyList()
             },
         )
     }
@@ -749,21 +830,39 @@ private fun AttendanceRoute(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val asistenciaPrefs = remember { AttendancePreferences(context) }
     var saving by remember { mutableStateOf(false) }
+    val hoy = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) }
     val carga = rememberCarga(programId, excludeUserIds) {
-        ApiClient.call { postulantes(programId) }.filter { it.participa && it.usuario_id !in excludeUserIds }
+        val lista = ApiClient.call { postulantes(programId) }.filter { it.participa && it.usuario_id !in excludeUserIds }
+        // La lista de hoy: la del historial del backend; si no hay registro, la última del flag;
+        // y si nunca se pasó lista, todos presentes.
+        val presentesHoy = runCatching { asistenciaDelDia(programId, hoy, lista) }.getOrNull()
+            ?: asistenciaPrefs.presentIds(programId, hoy).takeIf { it.isNotEmpty() }
+            ?: presentesIniciales(lista)
+        lista to presentesHoy
     }
-    EstadoCarga(carga, modifier = Modifier.fillMaxSize()) { lista ->
+    EstadoCarga(carga, modifier = Modifier.fillMaxSize()) { (lista, presentesHoy) ->
+        val todos = lista.map { it.id }.toSet()
+        // La lista del día elegido: la del historial del backend; si ese día no tiene registro,
+        // la caché local; y si tampoco, todos presentes (o la última lista si es hoy).
+        suspend fun listaDe(dateKey: String): Set<Int> =
+            runCatching { asistenciaDelDia(programId, dateKey, lista) }.getOrNull()
+                ?: asistenciaPrefs.presentIds(programId, dateKey).takeIf { it.isNotEmpty() }
+                ?: if (dateKey == hoy) presentesHoy else todos
         AttendanceScreen(
             programTitle = programTitle,
             roster = lista.map { RosterEntry(it.id, it.usuario_nombre.ifBlank { it.usuario_email }) },
-            initialPresent = presentesIniciales(lista),
+            initialDateKey = hoy,
+            loadPresent = { listaDe(it) },
+            initialPresent = presentesHoy,
             saving = saving,
             readOnly = readOnly,
-            onSave = { presentes ->
+            onSave = { dateKey, presentes ->
                 scope.launch {
                     saving = true
-                    runCatching { guardarAsistencia(lista, presentes) }
+                    asistenciaPrefs.savePresent(programId, dateKey, presentes)
+                    runCatching { guardarAsistenciaDia(programId, dateKey, lista, presentes) }
                         .onSuccess {
                             onSaved()
                             onBack()

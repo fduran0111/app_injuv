@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
@@ -52,8 +51,8 @@ fun SettingsScreen(
     onLogout: () -> Unit = {},
     /** Certificados de voluntariado + personales, para el subtítulo. */
     certificadosCount: Int = 0,
-    /** Cambios de estado sin revisar, para el subtítulo de Notificaciones. */
-    novedadesCount: Int = 0,
+    /** Subtítulo del acceso a las preferencias de notificaciones. */
+    notificacionesSubtitle: String = "Recibir alertas y elegir tipos",
 ) {
     val T = LocalAppColors.current
 
@@ -116,15 +115,8 @@ fun SettingsScreen(
             SettingsRow(
                 icon = Icons.Filled.Notifications,
                 title = "Notificaciones",
-                subtitle = if (novedadesCount > 0) "$novedadesCount ${if (novedadesCount == 1) "novedad" else "novedades"} sin revisar"
-                    else "Alertas de postulaciones y anuncios",
-                onClick = { onNavigate("notifications") },
-            )
-            Spacer(Modifier.height(10.dp))
-            SettingsRow(
-                icon = Icons.AutoMirrored.Filled.HelpOutline,
-                title = "Ayuda",
-                subtitle = "Preguntas frecuentes",
+                subtitle = notificacionesSubtitle,
+                onClick = { onNavigate("notification_settings") },
             )
 
             Spacer(Modifier.height(22.dp))

@@ -101,6 +101,8 @@ data class Oportunidad(
     val tipo_de_voluntariado: String = "",
     val num_postulaciones: Int = 0,
     val tiene_imagen: Boolean = false,
+    /** Preguntas que la organización pide responder al postular. */
+    val preguntas: List<PreguntaItem> = emptyList(),
     /** IDs de los encargados/tutores (los mismos que se designan en la web). */
     val encargados_ids: List<Int> = emptyList(),
     /** Solo viene en GET /oportunidades/{id} cuando hay sesión. */
@@ -127,6 +129,23 @@ data class EncargadosBody(val encargados_ids: List<Int>)
 
 @Serializable
 data class PostularResponse(val id: Int, val estado: String)
+
+/** Pregunta que la organización agrega a la convocatoria para filtrar postulantes. */
+@Serializable
+data class PreguntaItem(
+    val id: String = "",
+    val texto: String = "",
+    /** "si_no" | "alternativas" | "texto" */
+    val tipo: String = "si_no",
+    val opciones: List<String> = emptyList(),
+    val obligatoria: Boolean = true,
+)
+
+/** POST /oportunidades/{id}/postular — respuestas a las preguntas: {"<id pregunta>": "respuesta"}. */
+@Serializable
+data class PostularBody(
+    val respuestas: Map<String, String> = emptyMap(),
+)
 
 /** GET /usuarios/me/postulaciones */
 @Serializable
@@ -274,6 +293,7 @@ data class PostulacionOrg(
     val estado: String = "Pendiente de revisión",
     val estado_confirmacion: String = "Pendiente",
     /** "SI" | "No" | "No aplica" */
+    val asistencia_capacitacion: String = "No aplica",
     val asistencia_actividad: String = "No aplica",
     val horas_voluntariado: Double = 0.0,
     val rechazo_participacion: Boolean = false,
@@ -284,9 +304,31 @@ data class PostulacionOrg(
     val participa: Boolean get() = estado == "Seleccionado" && !rechazo_participacion
 }
 
-/** PATCH /postulaciones/{id}/asistencia ("SI" | "No" | "No aplica"). */
+/** PATCH /postulaciones/{id}/asistencia — cada campo "SI" | "No" | "No aplica"; null = no cambiar. */
 @Serializable
-data class AsistenciaBody(val asistencia_actividad: String)
+data class AsistenciaBody(
+    val asistencia_capacitacion: String? = null,
+    val asistencia_actividad: String? = null,
+)
+
+/** GET/PUT /oportunidades/{id}/asistencias — historial de asistencia por fecha. */
+@Serializable
+data class AsistenciaRegistro(
+    val postulacion_id: Int,
+    val presente: Boolean = true,
+)
+
+@Serializable
+data class AsistenciaDiaBody(
+    val fecha: String,
+    val registros: List<AsistenciaRegistro> = emptyList(),
+)
+
+@Serializable
+data class AsistenciaDiaResponse(
+    val fecha: String = "",
+    val registrados: Int = 0,
+)
 
 /** GET /foros: voluntariados con foro (los que tutorea o en los que participa el usuario). */
 @Serializable
