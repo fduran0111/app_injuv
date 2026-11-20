@@ -69,6 +69,12 @@ interface InjuvApi {
     suspend fun postular(@Path("id") id: Int, @Body body: PostularBody = PostularBody()): PostularResponse
 
     // ---------- Organización (integrantes) ----------
+    @GET("organizaciones/{id}")
+    suspend fun organizacionDetalle(@Path("id") id: Int): OrganizacionDetalle
+
+    @GET("organizaciones/{id}/resenas")
+    suspend fun organizacionResenas(@Path("id") id: Int): List<ResenaOrganizacion>
+
     @GET("organizaciones/mia")
     suspend fun miOrganizacion(): OrganizacionDetalle
 

@@ -269,6 +269,37 @@ data class OrganizacionDetalle(
     val experiencia_anios: Int? = null,
     val voluntarios_anuales: String = "",
     val tiene_logo: Boolean = false,
+    /** Campos del perfil público (GET /organizaciones/{id}). */
+    val tiene_banner: Boolean = false,
+    val logo_version: String? = null,
+    val banner_version: String? = null,
+    val rut: String = "",
+    val num_oportunidades: Int = 0,
+    val total_postulaciones: Int = 0,
+    val calificacion_promedio: Double? = null,
+    val certificacion: List<CertificacionOrg> = emptyList(),
+    val fecha_creacion: String? = null,
+)
+
+/** Certificación/documento oficial que la organización subió a su perfil. */
+@Serializable
+data class CertificacionOrg(
+    val nombre: String = "",
+    val archivo: String = "",
+    val subido_en: String? = null,
+)
+
+/** GET /organizaciones/{id}/resenas — reseña pública que un voluntario dejó a la ONG. */
+@Serializable
+data class ResenaOrganizacion(
+    val postulacion_id: Int = 0,
+    val oportunidad_id: Int = 0,
+    val oportunidad_titulo: String = "",
+    val usuario_nombre: String = "",
+    val resena: String = "",
+    val calificacion: Double? = null,
+    val es_publica: Boolean = true,
+    val fecha: String? = null,
 )
 
 /** GET /organizaciones/mia/integrantes: administrador y miembros de la organización. */

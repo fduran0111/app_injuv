@@ -13,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
@@ -64,7 +65,7 @@ import kotlinx.coroutines.launch
 
 /** Detalle de una oportunidad (GET /oportunidades/{id}) con el botón real de postular. */
 @Composable
-fun ApplicationDetailScreen(oportunidadId: Int, onBack: () -> Unit) {
+fun ApplicationDetailScreen(oportunidadId: Int, onBack: () -> Unit, onOpenOrg: (Int) -> Unit = {}) {
     val T = LocalAppColors.current
     val carga = rememberCarga(oportunidadId) { ApiClient.call { oportunidad(oportunidadId) } }
 
@@ -79,7 +80,7 @@ fun ApplicationDetailScreen(oportunidadId: Int, onBack: () -> Unit) {
             }
         }
         EstadoCarga(carga) { op ->
-            DetalleOportunidad(op, onBack = onBack, onPostulado = carga::recargar)
+            DetalleOportunidad(op, onBack = onBack, onPostulado = carga::recargar, onOpenOrg = onOpenOrg)
         }
     }
 }
@@ -89,7 +90,12 @@ private fun MiPostulacion.retirada() =
     estado == "Declinada por usuario" || (estado == "Seleccionado" && estado_confirmacion == "No confirmado")
 
 @Composable
-private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onPostulado: () -> Unit) {
+private fun DetalleOportunidad(
+    opportunity: Oportunidad,
+    onBack: () -> Unit,
+    onPostulado: () -> Unit,
+    onOpenOrg: (Int) -> Unit = {},
+) {
     val T = LocalAppColors.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -178,7 +184,26 @@ private fun DetalleOportunidad(opportunity: Oportunidad, onBack: () -> Unit, onP
                 fontSize = 22.sp,
                 color = T.textPrimary,
             )
-            Text(opportunity.organizacion_nombre, fontFamily = Outfit, fontSize = 14.sp, color = T.textMuted)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable(enabled = opportunity.organizacion_id > 0) { onOpenOrg(opportunity.organizacion_id) }
+                    .padding(end = 4.dp),
+            ) {
+                Text(
+                    opportunity.organizacion_nombre,
+                    fontFamily = Outfit,
+                    fontSize = 14.sp,
+                    color = T.coral,
+                )
+                Icon(
+                    Icons.Filled.ChevronRight,
+                    contentDescription = "Ver perfil de la organización",
+                    tint = T.coral,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
 
             Spacer(Modifier.height(20.dp))
 

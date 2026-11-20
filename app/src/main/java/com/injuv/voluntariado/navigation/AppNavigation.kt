@@ -94,6 +94,7 @@ import com.injuv.voluntariado.screens.NewsDetailScreen
 import com.injuv.voluntariado.screens.NewsScreen
 import com.injuv.voluntariado.screens.NotificationSettingsScreen
 import com.injuv.voluntariado.screens.NotificationsScreen
+import com.injuv.voluntariado.screens.OrgProfileScreen
 import com.injuv.voluntariado.screens.OrganizationScreen
 import com.injuv.voluntariado.screens.ProfileScreen
 import com.injuv.voluntariado.screens.SettingsScreen
@@ -358,6 +359,18 @@ fun InjuvApp(
                         ApplicationDetailScreen(
                             oportunidadId = id,
                             onBack = { navController.popBackStack() },
+                            onOpenOrg = { orgId -> navController.navigate("org_profile/$orgId") },
+                        )
+                    }
+                    composable(
+                        "org_profile/{orgId}",
+                        arguments = listOf(navArgument("orgId") { type = NavType.IntType }),
+                    ) { entry ->
+                        val orgId = entry.arguments?.getInt("orgId") ?: 0
+                        OrgProfileScreen(
+                            organizacionId = orgId,
+                            onBack = { navController.popBackStack() },
+                            onOpenOportunidad = { opId -> navController.navigate("application_detail/$opId") },
                         )
                     }
                     composable("profile") {
