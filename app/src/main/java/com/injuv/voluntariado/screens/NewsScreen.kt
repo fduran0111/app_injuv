@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -102,6 +103,8 @@ private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Mod
                 fontWeight = FontWeight.SemiBold,
                 fontSize = if (destacada) 16.sp else 14.sp,
                 color = T.textPrimary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))
             Text(news.resumen.ifBlank { news.contenido }, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)

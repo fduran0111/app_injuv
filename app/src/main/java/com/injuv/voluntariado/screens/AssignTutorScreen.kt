@@ -2,6 +2,7 @@ package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -125,7 +126,8 @@ fun AssignTutorScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase),
+            .background(T.bgBase)
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -191,7 +193,7 @@ fun AssignTutorScreen(
                     onClick = { search() },
                     enabled = !searching,
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                    colors = ButtonDefaults.buttonColors(containerColor = T.action),
                 ) {
                     if (searching) {
                         CircularProgressIndicator(modifier = Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
@@ -282,7 +284,7 @@ fun AssignTutorScreen(
                 .padding(20.dp)
                 .height(50.dp),
             shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+            colors = ButtonDefaults.buttonColors(containerColor = T.action),
         ) {
             if (saving) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)

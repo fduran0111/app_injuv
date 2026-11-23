@@ -226,7 +226,7 @@ private fun PrefToggle(
             enabled = enabled,
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
-                checkedTrackColor = T.coral,
+                checkedTrackColor = T.action,
                 uncheckedThumbColor = Color.White,
                 uncheckedTrackColor = T.textSubtle,
             ),

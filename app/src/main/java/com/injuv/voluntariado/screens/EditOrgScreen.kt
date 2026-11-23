@@ -2,6 +2,7 @@ package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -54,7 +55,8 @@ fun EditOrgScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase),
+            .background(T.bgBase)
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -119,7 +121,7 @@ fun EditOrgScreen(
                 .height(50.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = T.coral,
+                containerColor = T.action,
                 disabledContainerColor = T.textSubtle.copy(alpha = 0.3f),
             ),
         ) {

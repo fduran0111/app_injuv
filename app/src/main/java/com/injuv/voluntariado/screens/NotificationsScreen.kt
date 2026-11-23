@@ -123,7 +123,7 @@ fun NotificationsScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(T.coral)
+                                    .background(T.action)
                                     .padding(horizontal = 10.dp, vertical = 4.dp),
                             ) {
                                 Text("Calificar a la organización", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.White)

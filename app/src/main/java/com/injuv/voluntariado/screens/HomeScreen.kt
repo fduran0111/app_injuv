@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.collectAsState
@@ -133,14 +135,20 @@ fun HomeScreen(
                     fontSize = 17.sp,
                     color = T.textPrimary,
                 )
-                Text(
-                    text = "Ver todas",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp,
-                    color = T.coral,
-                    modifier = Modifier.clickable(onClick = onOpenNews),
-                )
+                Box(
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .clickable(onClick = onOpenNews),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = "Ver todas",
+                        fontFamily = SpaceGrotesk,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        color = T.coral,
+                    )
+                }
             }
             Spacer(Modifier.height(12.dp))
             EstadoCarga(noticias) { lista ->
@@ -200,7 +208,8 @@ private fun FeaturedOpportunityCard(opportunity: Oportunidad, onClick: () -> Uni
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 color = T.textPrimary,
-                maxLines = 1,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

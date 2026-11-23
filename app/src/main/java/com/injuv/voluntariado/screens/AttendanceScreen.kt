@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -31,6 +33,7 @@ import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,6 +78,7 @@ fun AttendanceScreen(
     val scope = rememberCoroutineScope()
     var dateKey by remember { mutableStateOf(initialDateKey) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var pendingDateKey by remember { mutableStateOf<String?>(null) }
     var present by remember(initialPresent) { mutableStateOf(initialPresent) }
 
     fun marcar(id: Int, presente: Boolean) {
@@ -118,7 +122,9 @@ fun AttendanceScreen(
                 Text(programTitle, fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { showDatePicker = true },
+                    modifier = Modifier
+                        .heightIn(min = 48.dp)
+                        .clickable { showDatePicker = true },
                 ) {
                     Icon(
                         Icons.Filled.CalendarToday,
@@ -239,7 +245,7 @@ fun AttendanceScreen(
                         .fillMaxWidth()
                         .height(50.dp),
                     shape = RoundedCornerShape(14.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                    colors = ButtonDefaults.buttonColors(containerColor = T.action),
                 ) {
                     if (saving) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
@@ -270,12 +276,33 @@ fun AttendanceScreen(
         DatePickerDialog(
             context,
             { _, year, month, day ->
-                selectDate("%04d-%02d-%02d".format(year, month + 1, day))
+                val key = "%04d-%02d-%02d".format(year, month + 1, day)
+                if (key == initialDateKey) {
+                    selectDate(key)
+                } else {
+                    pendingDateKey = key
+                }
                 showDatePicker = false
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH),
         ).show()
+    }
+
+    pendingDateKey?.let { key ->
+        AlertDialog(
+            onDismissRequest = { pendingDateKey = null },
+            title = { Text("Modificar otra fecha", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
+            text = { Text("Vas a modificar la lista del ${labelFor(key)}.", fontFamily = Outfit) },
+            confirmButton = {
+                TextButton(onClick = { selectDate(key); pendingDateKey = null }) {
+                    Text("Continuar", color = T.coral)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDateKey = null }) { Text("Cancelar") }
+            },
+        )
     }
 }

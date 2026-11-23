@@ -12,6 +12,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -129,7 +130,8 @@ fun EditProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase),
+            .background(T.bgBase)
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -164,7 +166,7 @@ fun EditProfileScreen(
                         .clip(RoundedCornerShape(50))
                         .then(
                             if (isActive) {
-                                Modifier.background(Brush.linearGradient(listOf(T.coral, T.coralDark)))
+                                Modifier.background(Brush.linearGradient(listOf(T.action, T.actionDark)))
                             } else {
                                 Modifier
                                     .background(T.surface1)
@@ -250,7 +252,7 @@ fun EditProfileScreen(
                     .weight(1f)
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = T.action, contentColor = Color.White),
             ) {
                 Text("Guardar", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }

@@ -3,6 +3,7 @@ package com.injuv.voluntariado.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,7 +12,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -46,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -123,12 +128,13 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
         modifier = Modifier
             .fillMaxSize()
             .background(T.bgBase)
+            .navigationBarsPadding()
             .imePadding(),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
+                .background(Brush.linearGradient(T.bgHeaderGradient)).statusBarsPadding()
                 .padding(horizontal = 24.dp, vertical = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -173,10 +179,11 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                         .weight(1f)
                         .clip(RoundedCornerShape(50))
                         .background(
-                            if (isLogin) Brush.linearGradient(listOf(T.coral, T.coralDark))
+                            if (isLogin) Brush.linearGradient(listOf(T.action, T.actionDark))
                             else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
                         )
-                        .clickable { isLogin = true; error = null }
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = isLogin, role = Role.Tab) { isLogin = true; error = null }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -193,10 +200,11 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                         .weight(1f)
                         .clip(RoundedCornerShape(50))
                         .background(
-                            if (!isLogin) Brush.linearGradient(listOf(T.coral, T.coralDark))
+                            if (!isLogin) Brush.linearGradient(listOf(T.action, T.actionDark))
                             else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
                         )
-                        .clickable { isLogin = false; error = null }
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = !isLogin, role = Role.Tab) { isLogin = false; error = null }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -310,6 +318,7 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                 },
                 supportingText = if (!isLogin) ({ Text("Mínimo 8 caracteres.") }) else null,
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 shape = RoundedCornerShape(14.dp),
                 colors = fieldColors,
@@ -325,6 +334,7 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                     placeholder = { Text("Repite tu contraseña") },
                     leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     shape = RoundedCornerShape(14.dp),
                     colors = fieldColors,
@@ -380,7 +390,7 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral, contentColor = Color.White),
+                colors = ButtonDefaults.buttonColors(containerColor = T.action, contentColor = Color.White),
             ) {
                 if (loading) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))

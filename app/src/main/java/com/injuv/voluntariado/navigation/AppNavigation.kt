@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -291,6 +292,7 @@ fun InjuvApp(
     }
 
     var menuOpen by remember { mutableStateOf(false) }
+    BackHandler(enabled = menuOpen) { menuOpen = false }
     val T = LocalAppColors.current
     val onShowAlert = { showStatusAlert = true }
     val onToggleMenu = { menuOpen = !menuOpen }

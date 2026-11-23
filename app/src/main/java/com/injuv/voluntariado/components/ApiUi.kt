@@ -134,7 +134,7 @@ fun ErrorCarga(mensaje: String, onReintentar: () -> Unit, modifier: Modifier = M
         Button(
             onClick = onReintentar,
             shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+            colors = ButtonDefaults.buttonColors(containerColor = T.action),
         ) { Text("Reintentar", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) }
     }
 }
@@ -202,8 +202,8 @@ fun descargarArchivo(context: Context, url: String, nombreArchivo: String) {
 }
 
 /**
- * Imagen de una oportunidad. El backend no guarda fotos por oportunidad: se usa el logo de la
- * organización si tiene, y si no un fondo con el ícono de voluntariado.
+ * Imagen de una oportunidad: se usa la foto propia de la oportunidad si tiene; si no, el logo
+ * de la organización; y si tampoco, un fondo con el ícono de voluntariado.
  */
 @Composable
 fun OportunidadImagen(oportunidad: Oportunidad, modifier: Modifier = Modifier) {
@@ -213,7 +213,14 @@ fun OportunidadImagen(oportunidad: Oportunidad, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(Icons.Filled.VolunteerActivism, contentDescription = null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(34.dp))
-        if (oportunidad.organizacion_tiene_logo) {
+        if (oportunidad.tiene_imagen) {
+            AsyncImage(
+                model = ApiClient.imagenOportunidad(oportunidad.id),
+                contentDescription = oportunidad.titulo,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+        } else if (oportunidad.organizacion_tiene_logo) {
             AsyncImage(
                 model = ApiClient.logoOrganizacion(oportunidad.organizacion_id),
                 contentDescription = oportunidad.organizacion_nombre,

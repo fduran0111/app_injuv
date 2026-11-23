@@ -3,6 +3,7 @@ package com.injuv.voluntariado.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -61,7 +62,8 @@ fun ForumScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase),
+            .background(T.bgBase)
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -183,9 +185,9 @@ fun ForumScreen(
                         }
                     },
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(T.coral, T.coralDark))),
+                        .background(Brush.linearGradient(listOf(T.action, T.actionDark))),
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Send,

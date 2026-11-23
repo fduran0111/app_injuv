@@ -5,6 +5,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -288,7 +290,7 @@ private fun DetalleOportunidad(
                             .fillMaxWidth()
                             .height(52.dp),
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                        colors = ButtonDefaults.buttonColors(containerColor = T.action),
                     ) {
                         if (postulando) {
                             CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
@@ -347,7 +349,8 @@ private fun PreguntasScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase),
+            .background(T.bgBase)
+            .imePadding(),
     ) {
         Row(
             modifier = Modifier
@@ -462,7 +465,7 @@ private fun PreguntasScreen(
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.coral),
+                colors = ButtonDefaults.buttonColors(containerColor = T.action),
             ) {
                 if (postulando) {
                     CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
@@ -482,18 +485,23 @@ private fun PreguntasScreen(
 @Composable
 private fun OpcionRespuesta(texto: String, seleccionada: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
-    Text(
-        texto,
-        fontFamily = Outfit,
-        fontSize = 13.sp,
-        color = if (seleccionada) T.coral else T.textSecondary,
-        textAlign = TextAlign.Center,
+    Box(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(if (seleccionada) T.coral.copy(alpha = 0.15f) else T.surface1)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    )
+            .selectable(selected = seleccionada, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            texto,
+            fontFamily = Outfit,
+            fontSize = 13.sp,
+            color = if (seleccionada) T.coral else T.textSecondary,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 @Composable

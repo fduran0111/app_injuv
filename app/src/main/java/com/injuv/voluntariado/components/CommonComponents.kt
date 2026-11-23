@@ -11,14 +11,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -93,7 +96,7 @@ fun AppScreenHeader(
         modifier = modifier
             .fillMaxWidth()
             .background(Brush.linearGradient(LocalAppColors.current.bgHeaderGradient))
-            .padding(horizontal = 12.dp, vertical = 24.dp),
+            .padding(horizontal = 12.dp, vertical = 16.dp),
     ) {
         Column {
             Row(
@@ -150,19 +153,15 @@ fun FilterChipsRow(
     ) {
         options.forEachIndexed { index, option ->
             val isActive = option == selected
-            Text(
-                text = option,
-                fontFamily = SpaceGrotesk,
-                fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
-                fontSize = 12.sp,
-                color = if (isActive) Color.White else Color.White.copy(alpha = 0.7f),
+            Box(
                 modifier = Modifier
                     .padding(start = if (index == 0) 0.dp else 8.dp)
+                    .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(50))
                     .then(
                         if (isActive) {
                             Modifier.background(
-                                Brush.linearGradient(listOf(T.coral, T.coralDark))
+                                Brush.linearGradient(listOf(T.action, T.actionDark))
                             )
                         } else {
                             Modifier
@@ -170,9 +169,18 @@ fun FilterChipsRow(
                                 .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(50))
                         }
                     )
-                    .clickable { onSelect(option) }
-                    .padding(horizontal = 16.dp, vertical = 7.dp),
-            )
+                    .selectable(selected = isActive, role = Role.Button, onClick = { onSelect(option) })
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = option,
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
+                    fontSize = 12.sp,
+                    color = if (isActive) Color.White else Color.White.copy(alpha = 0.7f),
+                )
+            }
         }
     }
 }

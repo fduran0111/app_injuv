@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.AppScreenHeader
@@ -113,7 +114,8 @@ private fun OpportunityListCard(opportunity: Oportunidad, onClick: () -> Unit, m
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 color = T.textPrimary,
-                maxLines = 1,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(opportunity.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 1)
             Spacer(Modifier.height(6.dp))

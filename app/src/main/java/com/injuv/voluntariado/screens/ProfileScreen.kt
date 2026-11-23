@@ -3,6 +3,7 @@ package com.injuv.voluntariado.screens
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -355,15 +358,9 @@ fun ProfileScreen(
                     .clip(RoundedCornerShape(50))
                     .background(T.surface1),
             ) {
-                ProfileTabChip("En curso", isSelected = activeTab == ProfileTab.EnCurso, modifier = Modifier
-                    .weight(1f)
-                    .clickable { activeTab = ProfileTab.EnCurso })
-                ProfileTabChip("Postuladas", isSelected = activeTab == ProfileTab.Postuladas, modifier = Modifier
-                    .weight(1f)
-                    .clickable { activeTab = ProfileTab.Postuladas })
-                ProfileTabChip("Terminadas", isSelected = activeTab == ProfileTab.Terminadas, modifier = Modifier
-                    .weight(1f)
-                    .clickable { activeTab = ProfileTab.Terminadas })
+                ProfileTabChip("En curso", isSelected = activeTab == ProfileTab.EnCurso, onClick = { activeTab = ProfileTab.EnCurso }, modifier = Modifier.weight(1f))
+                ProfileTabChip("Postuladas", isSelected = activeTab == ProfileTab.Postuladas, onClick = { activeTab = ProfileTab.Postuladas }, modifier = Modifier.weight(1f))
+                ProfileTabChip("Terminadas", isSelected = activeTab == ProfileTab.Terminadas, onClick = { activeTab = ProfileTab.Terminadas }, modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -444,7 +441,7 @@ fun ProfileScreen(
                             Box(
                                 modifier = Modifier
                                     .clip(CircleShape)
-                                    .background(T.coral)
+                                    .background(T.action)
                                     .clickable {
                                         if (pendientesCalificar.size == 1) calificando = pendientesCalificar.first()
                                         else eligiendoCalificar = true
@@ -638,12 +635,14 @@ private fun ProfileStat(value: String, label: String) {
 }
 
 @Composable
-private fun ProfileTabChip(label: String, isSelected: Boolean, modifier: Modifier = Modifier) {
+private fun ProfileTabChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
     Box(
         modifier = modifier
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(50))
-            .background(if (isSelected) Brush.linearGradient(listOf(T.coral, T.coralDark)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
+            .background(if (isSelected) Brush.linearGradient(listOf(T.action, T.actionDark)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
+            .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
             .padding(vertical = 10.dp, horizontal = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -841,7 +840,7 @@ private fun CalificarOrgDialog(
                     Switch(
                         checked = publica,
                         onCheckedChange = { publica = it },
-                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = T.coral),
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = T.action),
                     )
                 }
             }
