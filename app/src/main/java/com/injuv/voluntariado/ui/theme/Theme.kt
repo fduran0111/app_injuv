@@ -6,9 +6,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Density
 import com.injuv.voluntariado.R
 
 // Tipografías del diseño original: Space Grotesk (títulos/UI) y Outfit (cuerpo de texto).
@@ -66,8 +68,8 @@ fun darkAppColors() = AppColors(
     border1 = Color(0x12FFFFFF),
     border2 = Color(0x1FFFFFFF),
     textPrimary = Color(0xFFFFFFFF),
-    textSecondary = Color(0xFFDDE4F5),
-    textMuted = Color(0xFF8896B3),
+    textSecondary = Color(0xFFE6EBF8),
+    textMuted = Color(0xFFAAB7D3),
     textSubtle = Color(0xFF7E8DB8),
     navBg = Color(0xFF0A1628),
     navBorder = Color(0x0DFFFFFF),
@@ -133,9 +135,12 @@ fun ProvideAppTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (isDark) darkAppColors() else lightAppColors()
+    val density = LocalDensity.current
+    // +8% de escala tipográfica respecto a la del sistema: mismo aumento en ambos modos.
     CompositionLocalProvider(
         LocalAppColors provides colors,
         LocalOnThemeChange provides onThemeChange,
+        LocalDensity provides Density(density.density, density.fontScale * 1.08f),
     ) {
         MaterialTheme(content = content)
     }
