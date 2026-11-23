@@ -124,7 +124,7 @@ private fun OpportunityListCard(opportunity: Oportunidad, onClick: () -> Unit, m
                 Spacer(Modifier.width(10.dp))
                 Icon(Icons.Filled.People, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(12.dp))
                 Spacer(Modifier.width(3.dp))
-                Text(opportunity.cupo_maximo?.let { "$it cupos" } ?: "Cupo abierto", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                Text(opportunity.cupo_maximo?.let { "$it cupos" } ?: "Cupo abierto", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
             }
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -206,7 +206,7 @@ fun OrganizationScreen(
                     Text(
                         "${opportunity.horas_voluntariado ?: 0}h · ${opportunity.cupo_maximo?.let { "$it cupos" } ?: "Sin límite de cupos"}",
                         fontFamily = Outfit,
-                        fontSize = 11.sp,
+                        fontSize = 12.sp,
                         color = T.textMuted,
                     )
                     Spacer(Modifier.height(4.dp))

@@ -762,7 +762,7 @@ private fun HistoryProgramCard(p: PostulacionUsuario, onDescargar: () -> Unit, m
             Row(verticalAlignment = Alignment.CenterVertically) {
                 EstadoPostulacionChip(if (p.estado == "Seleccionado" && p.voluntariado_terminado) "Finalizado" else p.estado)
                 Spacer(Modifier.width(8.dp))
-                if (p.horas_voluntariado > 0) Text("${formatearHoras(p.horas_voluntariado)}h", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                if (p.horas_voluntariado > 0) Text("${formatearHoras(p.horas_voluntariado)}h", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
             }
         }
         if (p.tiene_certificado) {

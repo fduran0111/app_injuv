@@ -172,8 +172,8 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
             Text(
                 "${op.horas_voluntariado ?: 0}h",
                 fontFamily = Outfit,
-                fontSize = 11.sp,
-                color = T.textSubtle,
+                fontSize = 12.sp,
+                color = T.textMuted,
             )
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)

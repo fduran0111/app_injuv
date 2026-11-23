@@ -216,7 +216,7 @@ private fun FeaturedOpportunityCard(opportunity: Oportunidad, onClick: () -> Uni
                     opportunity.fecha_limite_postulacion?.let { "cierra ${formatearFecha(it)}" },
                 ).joinToString(" · ").ifBlank { opportunity.organizacion_nombre },
                 fontFamily = Outfit,
-                fontSize = 11.sp,
+                fontSize = 12.sp,
                 color = T.coral,
             )
         }
