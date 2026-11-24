@@ -105,6 +105,7 @@ private fun DetalleOportunidad(
     var confirmando by remember { mutableStateOf(false) }
     var preguntando by remember { mutableStateOf(false) }
     var postulando by remember { mutableStateOf(false) }
+    var postulada by remember { mutableStateOf(false) }
     var miPostulacion by remember(opportunity.id) {
         mutableStateOf<MiPostulacion?>(opportunity.mi_postulacion?.takeUnless { it.retirada() })
     }
@@ -115,7 +116,8 @@ private fun DetalleOportunidad(
             try {
                 val r = ApiClient.call { this.postular(opportunity.id, PostularBody(respuestas)) }
                 miPostulacion = MiPostulacion(r.id, r.estado)
-                Toast.makeText(context, "¡Postulación enviada! Te avisaremos cuando la organización la revise.", Toast.LENGTH_LONG).show()
+                preguntando = false
+                postulada = true
                 onPostulado()
             } catch (e: ApiException) {
                 Toast.makeText(context, e.message, Toast.LENGTH_LONG).show()
@@ -123,6 +125,24 @@ private fun DetalleOportunidad(
                 postulando = false
             }
         }
+    }
+
+    if (postulada) {
+        AlertDialog(
+            onDismissRequest = { postulada = false },
+            title = {
+                Text("¡Postulación enviada!", fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    "Tu postulación a «${opportunity.titulo}» fue enviada. Te avisaremos cuando la organización la revise — puedes seguir su estado en Perfil → Postuladas.",
+                    fontFamily = Outfit,
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { postulada = false }) { Text("Cerrar", color = T.coral) }
+            },
+        )
     }
 
     if (preguntando) {

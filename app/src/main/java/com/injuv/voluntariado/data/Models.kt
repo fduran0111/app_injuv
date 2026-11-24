@@ -124,6 +124,7 @@ data class ForumMessage(
     val author: String,
     val text: String,
     val date: String,
+    val fijado: Boolean = false,
 )
 
 data class Skill(

@@ -51,6 +51,7 @@ import com.injuv.voluntariado.data.AttendancePreferences
 import com.injuv.voluntariado.data.NotificationPreferences
 import com.injuv.voluntariado.data.OrgProfile
 import com.injuv.voluntariado.data.api.ForoCanal
+import com.injuv.voluntariado.data.api.FijarBody
 import com.injuv.voluntariado.data.api.ForoMensaje
 import com.injuv.voluntariado.data.api.ForoMensajeBody
 import com.injuv.voluntariado.data.api.Integrante
@@ -333,9 +334,9 @@ fun InjuvApp(
                             onShowAlert = onShowAlert,
                             onToggleMenu = onToggleMenu,
                             userName = userProfile.name,
-                            onOpenNews = {
+                            onVerTodasOportunidades = {
                                 menuOpen = false
-                                navController.goTo("news")
+                                navController.goTo("applications")
                             },
                             onOpenNewsDetail = { id ->
                                 menuOpen = false
@@ -929,6 +930,24 @@ private fun ForoRoute(
                     .onSuccess { nuevo -> mensajes = mensajes + nuevo }
                     .onFailure {
                         Toast.makeText(context, it.message ?: "No se pudo enviar el mensaje.", Toast.LENGTH_LONG).show()
+                    }
+            }
+        },
+        canPin = canWrite,
+        onToggleFijar = { m ->
+            scope.launch {
+                runCatching { ApiClient.call { fijarMensaje(programId, m.id, FijarBody(!m.fijado)) } }
+                    .onSuccess { actualizado ->
+                        mensajes = mensajes.map { msg ->
+                            when {
+                                msg.id == actualizado.id -> actualizado
+                                actualizado.fijado -> msg.copy(fijado = false)
+                                else -> msg
+                            }
+                        }
+                    }
+                    .onFailure {
+                        Toast.makeText(context, it.message ?: "No se pudo fijar el mensaje.", Toast.LENGTH_LONG).show()
                     }
             }
         },

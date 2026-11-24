@@ -149,6 +149,7 @@ fun ForoMensaje.aForumMessage(): ForumMessage = ForumMessage(
     author = if (es_tutor) "$autor_nombre · Tutor" else autor_nombre,
     text = texto,
     date = fechaCorta(created_at),
+    fijado = fijado,
 )
 
 private fun fechaCorta(iso: String?): String {
