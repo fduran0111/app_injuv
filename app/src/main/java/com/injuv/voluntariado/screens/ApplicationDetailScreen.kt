@@ -136,7 +136,10 @@ private fun DetalleOportunidad(
         return
     }
 
-    Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+    val esVoluntario = usuario?.rol == "user"
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())) {
         Box {
             OportunidadImagen(
                 oportunidad = opportunity,
@@ -263,45 +266,6 @@ private fun DetalleOportunidad(
 
             Spacer(Modifier.height(28.dp))
 
-            val esVoluntario = usuario?.rol == "user"
-            when {
-                miPostulacion != null -> {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Ya postulaste · ", fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
-                        EstadoPostulacionChip(miPostulacion!!.estado)
-                    }
-                    Text(
-                        "Puedes seguir tu postulación en tu perfil.",
-                        fontFamily = Outfit,
-                        fontSize = 11.sp,
-                        color = T.textMuted,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
-                }
-                opportunity.cerrada -> AvisoSinPostular("Esta convocatoria está cerrada y ya no recibe postulaciones.")
-                !esVoluntario -> AvisoSinPostular("Solo las cuentas de voluntario pueden postular.")
-                else -> {
-                    Button(
-                        onClick = {
-                            if (opportunity.preguntas.isEmpty()) confirmando = true else preguntando = true
-                        },
-                        enabled = !postulando,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = T.action),
-                    ) {
-                        if (postulando) {
-                            CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-                        } else {
-                            Text("Postular ahora", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
             Text(
                 "Cierre de postulaciones: ${formatearFecha(opportunity.fecha_limite_postulacion, "sin fecha límite")}",
                 fontFamily = Outfit,
@@ -309,6 +273,55 @@ private fun DetalleOportunidad(
                 color = T.textMuted,
                 modifier = Modifier.padding(top = 4.dp),
             )
+            Spacer(Modifier.height(16.dp))
+        }
+        }
+
+        // Barra persistente con la acción de postulación: visible en todo el scroll.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(T.bgBase)
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+        ) {
+            when {
+                miPostulacion != null -> Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Ya postulaste · ", fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                    EstadoPostulacionChip(miPostulacion!!.estado)
+                }
+                opportunity.cerrada -> Text(
+                    "Esta convocatoria está cerrada y ya no recibe postulaciones.",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = T.textMuted,
+                )
+                !esVoluntario -> Text(
+                    "Solo las cuentas de voluntario pueden postular.",
+                    fontFamily = Outfit,
+                    fontSize = 12.sp,
+                    color = T.textMuted,
+                )
+                else -> Button(
+                    onClick = {
+                        if (opportunity.preguntas.isEmpty()) confirmando = true else preguntando = true
+                    },
+                    enabled = !postulando,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = T.action),
+                ) {
+                    if (postulando) {
+                        CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Postular ahora", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                    }
+                }
+            }
         }
     }
 
