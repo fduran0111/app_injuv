@@ -1,6 +1,8 @@
 package com.injuv.voluntariado.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
@@ -128,6 +130,49 @@ val LocalAppColors = compositionLocalOf { darkAppColors() }
 
 val LocalOnThemeChange = staticCompositionLocalOf<(Boolean) -> Unit> { {} }
 
+/**
+ * Esquema Material 3 derivado de los tokens AppColors: los componentes M3
+ * (AlertDialog, Switch, Checkbox, TextButton, progress indicators, sheets)
+ * heredan colores coherentes con el tema en vez de la paleta clara por defecto.
+ */
+private fun AppColors.toColorScheme() = if (isDark) {
+    darkColorScheme(
+        primary = action,
+        onPrimary = Color.White,
+        primaryContainer = actionDark,
+        onPrimaryContainer = Color.White,
+        secondary = blue,
+        onSecondary = Color(0xFF060D1F),
+        background = bgBase,
+        onBackground = textPrimary,
+        surface = bgCardGradient.first(),
+        onSurface = textPrimary,
+        surfaceVariant = surface1,
+        onSurfaceVariant = textSecondary,
+        outline = border2,
+        error = Color(0xFFF87171),
+        onError = Color(0xFF060D1F),
+    )
+} else {
+    lightColorScheme(
+        primary = action,
+        onPrimary = Color.White,
+        primaryContainer = action.copy(alpha = 0.12f),
+        onPrimaryContainer = textPrimary,
+        secondary = blue,
+        onSecondary = Color.White,
+        background = bgBase,
+        onBackground = textPrimary,
+        surface = bgCardGradient.first(),
+        onSurface = textPrimary,
+        surfaceVariant = surface1,
+        onSurfaceVariant = textSecondary,
+        outline = border2,
+        error = Color(0xFFDC2626),
+        onError = Color.White,
+    )
+}
+
 @Composable
 fun ProvideAppTheme(
     isDark: Boolean,
@@ -142,6 +187,6 @@ fun ProvideAppTheme(
         LocalOnThemeChange provides onThemeChange,
         LocalDensity provides Density(density.density, density.fontScale * 1.08f),
     ) {
-        MaterialTheme(content = content)
+        MaterialTheme(colorScheme = colors.toColorScheme(), content = content)
     }
 }
