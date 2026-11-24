@@ -381,8 +381,12 @@ data class ForoMensaje(
     val autor_nombre: String = "",
     val es_tutor: Boolean = false,
     val texto: String = "",
+    val fijado: Boolean = false,
     val created_at: String? = null,
 )
 
 @Serializable
 data class ForoMensajeBody(val canal: String, val texto: String)
+
+@Serializable
+data class FijarBody(val fijado: Boolean)

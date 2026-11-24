@@ -156,4 +156,12 @@ interface InjuvApi {
 
     @POST("oportunidades/{id}/foro")
     suspend fun publicarEnForo(@Path("id") id: Int, @Body body: ForoMensajeBody): ForoMensaje
+
+    /** Fija/desfija un mensaje del foro (solo staff: tutor, admin ONG o admin INJUV). */
+    @PATCH("oportunidades/{id}/foro/{mensajeId}")
+    suspend fun fijarMensaje(
+        @Path("id") id: Int,
+        @Path("mensajeId") mensajeId: Int,
+        @Body body: FijarBody,
+    ): ForoMensaje
 }

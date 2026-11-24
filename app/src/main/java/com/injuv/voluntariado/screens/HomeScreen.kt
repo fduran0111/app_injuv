@@ -57,7 +57,7 @@ fun HomeScreen(
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
     userName: String = "Voluntario",
-    onOpenNews: () -> Unit = {},
+    onVerTodasOportunidades: () -> Unit = {},
     onOpenNewsDetail: (Int) -> Unit = {},
 ) {
     val T = LocalAppColors.current
@@ -89,13 +89,27 @@ fun HomeScreen(
         }
 
         item {
-            Column(modifier = Modifier.padding(top = 24.dp, start = 20.dp, end = 20.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp, start = 20.dp, end = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = "Oportunidades destacadas",
                     fontFamily = SpaceGrotesk,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = T.textPrimary,
+                )
+                Text(
+                    text = "Ver todas",
+                    fontFamily = SpaceGrotesk,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    color = T.coral,
+                    modifier = Modifier.clickable(onClick = onVerTodasOportunidades),
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -119,27 +133,13 @@ fun HomeScreen(
         }
 
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 24.dp, start = 20.dp, end = 20.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Column(modifier = Modifier.padding(top = 24.dp, start = 20.dp, end = 20.dp)) {
                 Text(
                     text = "Últimas noticias",
                     fontFamily = SpaceGrotesk,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = T.textPrimary,
-                )
-                Text(
-                    text = "Ver todas",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 12.sp,
-                    color = T.coral,
-                    modifier = Modifier.clickable(onClick = onOpenNews),
                 )
             }
             Spacer(Modifier.height(12.dp))
