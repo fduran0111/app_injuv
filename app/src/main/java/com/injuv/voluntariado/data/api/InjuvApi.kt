@@ -135,6 +135,10 @@ interface InjuvApi {
     @GET("public/estadisticas")
     suspend fun estadisticas(): Estadisticas
 
+    /** Fotos de portada administradas desde la web (inicio, galería y acceso). */
+    @GET("portada")
+    suspend fun portada(): PortadaPublica
+
     @GET("noticias")
     suspend fun noticias(@Query("limit") limit: Int = 50): List<Noticia>
 

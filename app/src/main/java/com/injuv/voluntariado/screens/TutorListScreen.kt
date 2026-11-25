@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +25,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import com.injuv.voluntariado.components.TituloMarcador
+import com.injuv.voluntariado.components.BotonCirculo
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -37,8 +42,8 @@ import coil.compose.AsyncImage
 import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 /** Voluntariados donde la cuenta es tutora; al elegir uno se abre su panel de tutor. */
 @Composable
@@ -57,34 +62,26 @@ fun TutorListScreen(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(start = 20.dp, end = 8.dp, top = 14.dp, bottom = 6.dp),
+            verticalAlignment = Alignment.Top,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Mis tutorías",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
+                TituloMarcador("Mis tutorías", fontSize = 30.sp)
+                Spacer(Modifier.height(6.dp))
                 Text(
                     "Elige un voluntariado para abrir su panel",
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.85f),
+                    fontFamily = InstrumentSans,
+                    fontSize = 14.sp,
+                    color = T.textMuted,
                 )
             }
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = Color.White)
-            }
+            BotonCirculo(Icons.Filled.Settings, "Configuración", onOpenSettings)
         }
 
         if (tutorias.isEmpty()) {
             Text(
                 "Aún no te designan como tutor de un voluntariado.",
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 13.sp,
                 color = T.textMuted,
                 modifier = Modifier.padding(24.dp),
@@ -103,7 +100,7 @@ fun TutorListScreen(
                 item(key = "org_$org") {
                     Text(
                         org,
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
                         color = T.textMuted,
@@ -124,7 +121,8 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -154,7 +152,7 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
         ) {
             Text(
                 op.titulo,
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
                 color = T.textPrimary,
@@ -163,7 +161,7 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
             )
             Text(
                 op.organizacion_nombre,
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 12.sp,
                 color = T.textMuted,
                 maxLines = 1,
@@ -171,7 +169,7 @@ private fun TutoriaCard(op: Oportunidad, onClick: () -> Unit) {
             )
             Text(
                 "${op.horas_voluntariado ?: 0}h",
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 12.sp,
                 color = T.textMuted,
             )

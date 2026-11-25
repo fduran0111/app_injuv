@@ -19,6 +19,23 @@ fun formatearFecha(iso: String?, vacio: String = "—"): String {
     return "$dia ${MESES[mes - 1]} $anio"
 }
 
+/** Días que faltan hasta una fecha ISO (negativo si ya pasó, 0 = hoy); null si no hay fecha válida. */
+fun diasHasta(iso: String?): Int? {
+    val partes = iso?.take(10)?.split("-")?.mapNotNull { it.toIntOrNull() } ?: return null
+    if (partes.size != 3) return null
+    val objetivo = java.util.Calendar.getInstance().apply {
+        clear()
+        set(partes[0], partes[1] - 1, partes[2])
+    }
+    val hoy = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }
+    return Math.round((objetivo.timeInMillis - hoy.timeInMillis) / 86_400_000.0).toInt()
+}
+
 /** Año de una fecha ISO ("2026-11-10" → "2026"). */
 fun anioDe(iso: String?): String = iso?.take(4)?.takeIf { it.length == 4 } ?: ""
 

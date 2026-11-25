@@ -41,6 +41,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.injuv.voluntariado.components.coloresTono
+import com.injuv.voluntariado.components.Tono
+import com.injuv.voluntariado.components.Etiqueta
+import com.injuv.voluntariado.components.Avatar
+import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,9 +53,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.data.ForumMessage
+import com.injuv.voluntariado.components.SubHeader
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -81,39 +87,18 @@ fun ForumScreen(
             .background(T.bgBase)
             .imePadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column {
-                Text(
-                    headerTitle,
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
-                Text(
-                    programTitle,
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = headerTitle,
+            onBack = onBack,
+            subtitulo = programTitle,
+        )
 
         // Mensaje fijado por el tutor: visible arriba del chat; al tocarlo baja hasta el mensaje.
         if (fijado != null) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(T.coral.copy(alpha = 0.10f))
+                    .background(coloresTono(Tono.Ambar, T).fondo)
                     .clickable {
                         val i = messages.indexOfFirst { it.id == fijado.id }
                         if (i >= 0) scope.launch { listState.animateScrollToItem(i) }
@@ -121,19 +106,19 @@ fun ForumScreen(
                     .padding(horizontal = 20.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.PushPin, contentDescription = null, tint = T.coral, modifier = Modifier.size(15.dp))
+                Icon(Icons.Filled.PushPin, contentDescription = null, tint = coloresTono(Tono.Ambar, T).texto, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         "Mensaje fijado",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp,
-                        color = T.coral,
+                        fontSize = 12.sp,
+                        color = coloresTono(Tono.Ambar, T).texto,
                     )
                     Text(
                         "${fijado.author} · ${fijado.text}",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textSecondary,
                         maxLines = 1,
@@ -149,66 +134,67 @@ fun ForumScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             items(messages) { message ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.linearGradient(T.bgCardGradient))
-                        .then(
-                            if (canPin) Modifier.combinedClickable(
-                                onClick = {},
-                                onLongClick = { pinDialog = message },
-                            ) else Modifier,
-                        )
-                        .padding(14.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (badge != null) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Avatar(message.author, size = 36.dp)
+                    Spacer(Modifier.width(10.dp))
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 16.dp))
+                            .background(T.card)
+                            .border(
+                                1.dp,
+                                if (message.fijado) T.ambar.copy(alpha = 0.6f) else T.border1,
+                                RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomEnd = 16.dp, bottomStart = 16.dp),
+                            )
+                            .then(
+                                if (canPin) Modifier.combinedClickable(
+                                    onClick = {},
+                                    onLongClick = { pinDialog = message },
+                                ) else Modifier,
+                            )
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                badge,
-                                fontFamily = SpaceGrotesk,
+                                message.author,
+                                fontFamily = InstrumentSans,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 9.sp,
-                                color = T.coral,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(T.coral.copy(alpha = 0.15f))
-                                    .padding(horizontal = 8.dp, vertical = 2.dp),
+                                fontSize = 14.sp,
+                                color = T.textPrimary,
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f, fill = false),
                             )
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text(
-                            message.author,
-                            fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            color = T.textPrimary,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        if (message.fijado) {
-                            Icon(
-                                Icons.Filled.PushPin,
-                                contentDescription = "Fijado",
-                                tint = T.coral,
-                                modifier = Modifier.size(12.dp),
+                            if (badge != null) {
+                                Spacer(Modifier.width(8.dp))
+                                Etiqueta(badge.lowercase().replaceFirstChar { it.uppercase() }, Tono.Ambar)
+                            }
+                            Spacer(Modifier.weight(1f))
+                            if (message.fijado) {
+                                Icon(
+                                    Icons.Filled.PushPin,
+                                    contentDescription = "Fijado",
+                                    tint = T.ambar,
+                                    modifier = Modifier.size(13.dp),
+                                )
+                                Spacer(Modifier.width(4.dp))
+                            }
+                            Text(
+                                message.date,
+                                fontFamily = InstrumentSans,
+                                fontSize = 11.sp,
+                                color = T.textMuted,
                             )
-                            Spacer(Modifier.width(4.dp))
                         }
+                        Spacer(Modifier.height(6.dp))
                         Text(
-                            message.date,
-                            fontFamily = Outfit,
-                            fontSize = 10.sp,
-                            color = T.textSubtle,
+                            message.text,
+                            fontFamily = InstrumentSans,
+                            fontSize = 15.sp,
+                            lineHeight = 22.sp,
+                            color = T.textSecondary,
                         )
                     }
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        message.text,
-                        fontFamily = Outfit,
-                        fontSize = 13.sp,
-                        lineHeight = 19.sp,
-                        color = T.textSecondary,
-                    )
                 }
             }
         }
@@ -217,8 +203,9 @@ fun ForumScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgCardGradient))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                    .background(T.bgBase)
+                    .border(1.dp, T.border1)
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 OutlinedTextField(
@@ -227,17 +214,19 @@ fun ForumScreen(
                     placeholder = {
                         Text(
                             placeholder,
-                            fontFamily = Outfit,
+                            fontFamily = InstrumentSans,
                             fontSize = 13.sp,
                             color = T.textMuted,
                         )
                     },
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = T.coral,
-                        unfocusedBorderColor = T.textSubtle.copy(alpha = 0.4f),
-                        cursorColor = T.coral,
+                        focusedBorderColor = T.action,
+                        unfocusedBorderColor = T.border2,
+                        focusedContainerColor = T.card,
+                        unfocusedContainerColor = T.card,
+                        cursorColor = T.action,
                         focusedTextColor = T.textPrimary,
                         unfocusedTextColor = T.textPrimary,
                     ),
@@ -252,8 +241,8 @@ fun ForumScreen(
                     },
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(T.action, T.actionDark))),
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(T.action),
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.Send,
@@ -274,7 +263,7 @@ fun ForumScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     readOnlyText,
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 11.sp,
                     color = T.textMuted,
                 )
@@ -285,12 +274,12 @@ fun ForumScreen(
     pinDialog?.let { m ->
         AlertDialog(
             onDismissRequest = { pinDialog = null },
-            title = { Text(if (m.fijado) "Desfijar mensaje" else "Fijar mensaje", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
+            title = { Text(if (m.fijado) "Desfijar mensaje" else "Fijar mensaje", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold) },
             text = {
                 Text(
                     if (m.fijado) "Se quitará de la parte superior del foro."
                     else "Se mostrará fijado arriba del foro para todos los voluntarios.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                 )
             },
             confirmButton = {

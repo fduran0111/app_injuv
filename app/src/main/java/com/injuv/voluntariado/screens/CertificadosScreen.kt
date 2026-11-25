@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,9 +51,11 @@ import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.data.api.subirCertPersonal
+import com.injuv.voluntariado.components.SubHeader
+import com.injuv.voluntariado.components.TituloSeccion
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -107,32 +110,11 @@ fun CertificadosScreen(
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column(modifier = Modifier.padding(end = 16.dp)) {
-                Text(
-                    "Mis certificados",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "De voluntariados y documentos personales",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Mis certificados",
+            onBack = onBack,
+            subtitulo = "De voluntariados y documentos personales",
+        )
 
         Column(
             modifier = Modifier
@@ -144,7 +126,7 @@ fun CertificadosScreen(
             if (conCertificado.isEmpty()) {
                 Text(
                     "Cuando una organización emita tu certificado al terminar un voluntariado, aparecerá aquí.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 13.sp,
                     color = T.textMuted,
                 )
@@ -168,7 +150,7 @@ fun CertificadosScreen(
             SeccionTitulo("Personales")
             Text(
                 "La plataforma los pide al postular; deben estar emitidos hace menos de 6 meses.",
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 12.sp,
                 color = T.textMuted,
             )
@@ -211,13 +193,7 @@ fun CertificadosScreen(
 @Composable
 private fun SeccionTitulo(texto: String) {
     val T = LocalAppColors.current
-    Text(
-        texto,
-        fontFamily = SpaceGrotesk,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 14.sp,
-        color = T.textMuted,
-    )
+    TituloSeccion(texto)
 }
 
 @Composable
@@ -227,7 +203,8 @@ private fun CertificadoVoluntariadoCard(titulo: String, organizacion: String, on
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -235,10 +212,10 @@ private fun CertificadoVoluntariadoCard(titulo: String, organizacion: String, on
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.WorkspacePremium, contentDescription = null, tint = T.yellow, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+                Text(titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
             }
             if (organizacion.isNotBlank()) {
-                Text(organizacion, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                Text(organizacion, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
             }
         }
         IconButton(onClick = onDescargar) {
@@ -262,7 +239,8 @@ private fun CertificadoPersonalCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -272,14 +250,14 @@ private fun CertificadoPersonalCard(
                     .weight(1f)
                     .padding(horizontal = 12.dp),
             ) {
-                Text(nombre, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+                Text(nombre, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
                 Text(
                     if (nombreArchivo != null) {
                         listOfNotNull(nombreArchivo, subidoEn?.let { "subido el ${it.take(10)}" }).joinToString(" · ")
                     } else {
                         "No subido"
                     },
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 12.sp,
                     color = T.textMuted,
                 )
@@ -326,7 +304,7 @@ private fun CertAccion(icono: @Composable () -> Unit, texto: String, onClick: ()
         Spacer(Modifier.width(6.dp))
         Text(
             texto,
-            fontFamily = Outfit,
+            fontFamily = InstrumentSans,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium,
             color = T.textPrimary,

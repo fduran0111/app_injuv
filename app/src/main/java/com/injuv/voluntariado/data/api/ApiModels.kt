@@ -223,6 +223,20 @@ data class Documento(
     val organizacion_nombre: String? = null,
 )
 
+/** GET /portada — fotos que el equipo INJUV administra para la portada web. */
+@Serializable
+data class PortadaFoto(val id: Int = 0, val archivo: String = "", val alt: String = "")
+
+@Serializable
+data class PortadaFotos(
+    val inicio: List<PortadaFoto> = emptyList(),
+    val galeria: List<PortadaFoto> = emptyList(),
+    val acceso: List<PortadaFoto> = emptyList(),
+)
+
+@Serializable
+data class PortadaPublica(val fotos: PortadaFotos = PortadaFotos())
+
 /** GET /public/estadisticas */
 @Serializable
 data class Estadisticas(

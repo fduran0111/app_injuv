@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,9 +40,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.injuv.voluntariado.data.Opportunity
+import com.injuv.voluntariado.components.SubHeader
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
 fun TutorDashboardScreen(
@@ -61,33 +63,13 @@ fun TutorDashboardScreen(
             .background(T.bgBase)
             .verticalScroll(rememberScrollState()),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        SubHeader(
+            titulo = "Panel de tutor",
+            onBack = onBack,
+            subtitulo = "Gestiona tu oportunidad de voluntariado",
         ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "Panel de tutor",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "Gestiona tu oportunidad de voluntariado",
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-            IconButton(onClick = onOpenSettings) {
-                Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = Color.White)
+IconButton(onClick = onOpenSettings) {
+                Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = T.textPrimary)
             }
         }
 
@@ -96,7 +78,8 @@ fun TutorDashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(18.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .background(T.card)
+                    .border(1.dp, T.border1, RoundedCornerShape(18.dp))
                     .clickable(onClick = onAttendance),
             ) {
                 AsyncImage(
@@ -110,12 +93,12 @@ fun TutorDashboardScreen(
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         program.title,
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = Bricolage,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = T.textPrimary,
                     )
-                    Text(program.org, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                    Text(program.org, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         TutorStat("${program.spots}", "Cupos", T.coral)
@@ -131,7 +114,7 @@ fun TutorDashboardScreen(
             Spacer(Modifier.height(22.dp))
             Text(
                 "Acciones",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 color = T.textMuted,
@@ -160,8 +143,8 @@ fun TutorDashboardScreen(
 @Composable
 private fun TutorStat(value: String, label: String, color: Color) {
     Column {
-        Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
-        Text(label, fontFamily = Outfit, fontSize = 11.sp, color = LocalAppColors.current.textMuted)
+        Text(value, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = color)
+        Text(label, fontFamily = InstrumentSans, fontSize = 11.sp, color = LocalAppColors.current.textMuted)
     }
 }
 
@@ -173,8 +156,8 @@ private fun TutorMiniStat(label: String, value: String, color: Color, modifier: 
             .background(Brush.linearGradient(LocalAppColors.current.bgCardGradient))
             .padding(14.dp),
     ) {
-        Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = color)
-        Text(label, fontFamily = Outfit, fontSize = 11.sp, color = LocalAppColors.current.textMuted)
+        Text(value, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = color)
+        Text(label, fontFamily = InstrumentSans, fontSize = 11.sp, color = LocalAppColors.current.textMuted)
     }
 }
 
@@ -192,7 +175,8 @@ private fun TutorActionCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .then(if (enabled) Modifier.clickable(onClick = onClick!!) else Modifier)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -211,8 +195,8 @@ private fun TutorActionCard(
                 .weight(1f)
                 .padding(horizontal = 12.dp),
         ) {
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
-            Text(subtitle, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+            Text(title, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+            Text(subtitle, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
         }
         if (enabled) {
             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)

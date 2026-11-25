@@ -45,8 +45,9 @@ fun AcademyScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     ) {
         item {
             AppScreenHeader(
-                title = "Academia",
-                subtitle = "Material para potenciar tu voluntariado",
+                title = "Academia INJUV",
+                resaltado = "Academia",
+                subtitle = "Guías, plantillas y videos para potenciar tu voluntariado",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
                 bottomContent = filtros,
@@ -62,7 +63,7 @@ fun AcademyScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
             DocumentCard(
                 doc.copy(descripcion = listOfNotNull(doc.organizacion_nombre, doc.descripcion.ifBlank { null }).joinToString(" · ")),
                 onDescargar = { descargarArchivo(context, ApiClient.descargaDocumento(doc), doc.nombre_archivo) },
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
             )
         }
     }

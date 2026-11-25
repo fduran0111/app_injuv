@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,9 +35,11 @@ import com.injuv.voluntariado.components.EstadoPostulacionChip
 import com.injuv.voluntariado.data.api.Notificacion
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.components.SubHeader
+import com.injuv.voluntariado.components.TituloSeccion
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 /**
  * Notificaciones: las del servidor (las mismas de la campana web: postulaciones, cambios de
@@ -61,32 +64,11 @@ fun NotificationsScreen(
     val hayAlgo = !desactivadas && (recientes.isNotEmpty() || activas.isNotEmpty() || pendientesCalificar.isNotEmpty())
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column(modifier = Modifier.padding(end = 16.dp)) {
-                Text(
-                    "Notificaciones",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "Alertas de postulaciones y anuncios",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Notificaciones",
+            onBack = onBack,
+            subtitulo = "Alertas de postulaciones y anuncios",
+        )
 
         Column(
             modifier = Modifier
@@ -96,14 +78,14 @@ fun NotificationsScreen(
             if (desactivadas) {
                 Text(
                     "Tienes las notificaciones desactivadas. Actívalas en Configuración → Notificaciones para recibir alertas.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 13.sp,
                     color = T.textMuted,
                 )
             } else if (!hayAlgo) {
                 Text(
                     "No tienes notificaciones por ahora. Cuando cambie el estado de una postulación o un tutor publique un anuncio, aparecerá aquí.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 13.sp,
                     color = T.textMuted,
                 )
@@ -114,8 +96,8 @@ fun NotificationsScreen(
                 pendientesCalificar.forEach { p ->
                     Spacer(Modifier.height(10.dp))
                     NotifCard(onClick = onCalificar) {
-                        Text("Tu voluntariado terminó", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                        Text("${p.oportunidad_titulo} · ${p.organizacion_nombre}", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                        Text("Tu voluntariado terminó", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                        Text("${p.oportunidad_titulo} · ${p.organizacion_nombre}", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
@@ -124,7 +106,7 @@ fun NotificationsScreen(
                                     .background(T.action)
                                     .padding(horizontal = 10.dp, vertical = 4.dp),
                             ) {
-                                Text("Calificar a la organización", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.White)
+                                Text("Calificar a la organización", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.White)
                             }
                         }
                     }
@@ -140,7 +122,7 @@ fun NotificationsScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 n.titulo,
-                                fontFamily = SpaceGrotesk,
+                                fontFamily = InstrumentSans,
                                 fontWeight = if (n.leida) FontWeight.Medium else FontWeight.SemiBold,
                                 fontSize = 14.sp,
                                 color = if (n.leida) T.textSecondary else T.textPrimary,
@@ -150,10 +132,10 @@ fun NotificationsScreen(
                         }
                         if (!n.texto.isNullOrBlank()) {
                             Spacer(Modifier.height(4.dp))
-                            Text(n.texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary, maxLines = 3)
+                            Text(n.texto, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary, maxLines = 3)
                         }
                         Spacer(Modifier.height(4.dp))
-                        Text(formatearFecha(n.created_at, ""), fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
+                        Text(formatearFecha(n.created_at, ""), fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textSubtle)
                     }
                 }
             }
@@ -164,8 +146,8 @@ fun NotificationsScreen(
                 activas.forEach { p ->
                     Spacer(Modifier.height(10.dp))
                     NotifCard {
-                        Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                        Text(p.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                        Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                        Text(p.organizacion_nombre, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                         Spacer(Modifier.height(6.dp))
                         EstadoPostulacionChip(p.estado)
                     }
@@ -178,7 +160,7 @@ fun NotificationsScreen(
 @Composable
 private fun Seccion(texto: String) {
     val T = LocalAppColors.current
-    Text(texto, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textMuted)
+    TituloSeccion(texto)
 }
 
 @Composable
@@ -187,7 +169,8 @@ private fun NotifCard(onClick: (() -> Unit)? = null, contenido: @Composable () -
     val base = Modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(16.dp))
-        .background(Brush.linearGradient(T.bgCardGradient))
+        .background(T.card)
+        .border(1.dp, T.border1, RoundedCornerShape(16.dp))
     Column(
         modifier = (if (onClick != null) base.clickable(onClick = onClick) else base).padding(16.dp),
     ) {
@@ -204,6 +187,6 @@ private fun BadgeNuevo() {
             .background(T.coral.copy(alpha = 0.15f))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        Text("Nuevo", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = T.coral)
+        Text("Nuevo", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = T.coral)
     }
 }

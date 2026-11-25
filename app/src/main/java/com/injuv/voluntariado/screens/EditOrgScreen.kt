@@ -35,9 +35,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.data.OrgProfile
+import com.injuv.voluntariado.components.SubHeader
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
 fun EditOrgScreen(
@@ -58,32 +59,11 @@ fun EditOrgScreen(
             .background(T.bgBase)
             .imePadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column {
-                Text(
-                    "Editar organización",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "Datos visibles para voluntarios",
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Editar organización",
+            onBack = onBack,
+            subtitulo = "Datos visibles para voluntarios",
+        )
 
         Column(
             modifier = Modifier
@@ -127,7 +107,7 @@ fun EditOrgScreen(
         ) {
             Text(
                 "Guardar cambios",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp,
             )
@@ -147,7 +127,7 @@ private fun OrgField(
     Column {
         Text(
             label,
-            fontFamily = SpaceGrotesk,
+            fontFamily = InstrumentSans,
             fontWeight = FontWeight.SemiBold,
             fontSize = 13.sp,
             color = T.textPrimary,
@@ -157,7 +137,7 @@ private fun OrgField(
             value = value,
             onValueChange = onChange,
             placeholder = {
-                Text(placeholder, fontFamily = Outfit, fontSize = 13.sp, color = T.textSubtle)
+                Text(placeholder, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSubtle)
             },
             modifier = Modifier.fillMaxWidth(),
             minLines = minLines,

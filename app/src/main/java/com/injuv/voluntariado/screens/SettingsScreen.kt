@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -44,9 +46,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.injuv.voluntariado.components.SubHeader
+import com.injuv.voluntariado.components.TituloSeccion
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
 fun SettingsScreen(
@@ -64,45 +68,18 @@ fun SettingsScreen(
     var showLogoutConfirm by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column(modifier = Modifier.padding(end = 16.dp)) {
-                Text(
-                    "Configuración",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "Cuenta, apariencia y sesión",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Configuración",
+            onBack = onBack,
+            subtitulo = "Cuenta, apariencia y sesión",
+        )
 
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            Text(
-                "Cuenta",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-            )
+            TituloSeccion("Cuenta")
             Spacer(Modifier.height(10.dp))
             SettingsRow(
                 icon = Icons.Filled.Edit,
@@ -127,19 +104,14 @@ fun SettingsScreen(
             )
 
             Spacer(Modifier.height(22.dp))
-            Text(
-                "Apariencia",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-            )
+            TituloSeccion("Apariencia")
             Spacer(Modifier.height(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .background(T.card)
+                    .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -155,14 +127,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "Tema oscuro",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = T.textPrimary,
                     )
                     Text(
                         if (isDarkTheme) "Activado" else "Modo claro activado",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
@@ -180,19 +152,14 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(22.dp))
-            Text(
-                "Acerca de",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-            )
+            TituloSeccion("Acerca de")
             Spacer(Modifier.height(10.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .background(T.card)
+                    .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -204,14 +171,14 @@ fun SettingsScreen(
                 ) {
                     Text(
                         "INJUV Voluntariado",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                         color = T.textPrimary,
                     )
                     Text(
                         "Versión 1.0",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
@@ -231,8 +198,8 @@ fun SettingsScreen(
     if (showLogoutConfirm) {
         AlertDialog(
             onDismissRequest = { showLogoutConfirm = false },
-            title = { Text("¿Cerrar sesión?", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
-            text = { Text("Tendrás que ingresar de nuevo para continuar.", fontFamily = Outfit) },
+            title = { Text("¿Cerrar sesión?", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold) },
+            text = { Text("Tendrás que ingresar de nuevo para continuar.", fontFamily = InstrumentSans) },
             confirmButton = {
                 TextButton(onClick = { showLogoutConfirm = false; onLogout() }) {
                     Text("Cerrar sesión", color = T.coral)
@@ -257,19 +224,28 @@ private fun SettingsRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(22.dp))
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(T.action.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (T.isDark) T.blue else T.action, modifier = Modifier.size(21.dp))
+        }
         Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(horizontal = 12.dp),
         ) {
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
-            Text(subtitle, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+            Text(title, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+            Text(subtitle, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
         }
         Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
     }

@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.ui.theme
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
@@ -15,20 +16,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import com.injuv.voluntariado.R
 
-// Tipografías del diseño original: Space Grotesk (títulos/UI) y Outfit (cuerpo de texto).
-// Descarga los .ttf desde Google Fonts y colócalos en res/font (ver README_FUENTES.txt).
-val SpaceGrotesk = FontFamily(
-    Font(R.font.space_grotesk_regular, FontWeight.Normal),
-    Font(R.font.space_grotesk_medium, FontWeight.Medium),
-    Font(R.font.space_grotesk_semibold, FontWeight.SemiBold),
-    Font(R.font.space_grotesk_bold, FontWeight.Bold),
+// Tipografías de la plataforma web: Bricolage Grotesque (títulos y cifras) e Instrument Sans (texto y UI).
+val Bricolage = FontFamily(
+    Font(R.font.bricolage_medium, FontWeight.Medium),
+    Font(R.font.bricolage_semibold, FontWeight.SemiBold),
+    Font(R.font.bricolage_bold, FontWeight.Bold),
+    Font(R.font.bricolage_extrabold, FontWeight.ExtraBold),
 )
 
-val Outfit = FontFamily(
-    Font(R.font.outfit_light, FontWeight.Light),
-    Font(R.font.outfit_regular, FontWeight.Normal),
-    Font(R.font.outfit_medium, FontWeight.Medium),
-    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+val InstrumentSans = FontFamily(
+    Font(R.font.instrument_sans_regular, FontWeight.Normal),
+    Font(R.font.instrument_sans_medium, FontWeight.Medium),
+    Font(R.font.instrument_sans_semibold, FontWeight.SemiBold),
+    Font(R.font.instrument_sans_bold, FontWeight.Bold),
 )
 
 data class AppColors(
@@ -47,73 +47,93 @@ data class AppColors(
     val navBg: Color,
     val navBorder: Color,
     val navInactive: Color,
+    /** Rojo institucional para plazos, urgencia y acento (legible como texto). */
     val coral: Color,
     val coralDark: Color,
     /** Acción con texto blanco encima: contraste AA (≥4.5:1) en ambos temas. */
     val action: Color,
     val actionDark: Color,
+    /** Ámbar legible como texto sobre el fondo del tema. */
     val yellow: Color,
     val blue: Color,
     val green: Color,
     val progressTrack: Color,
     val inputBg: Color,
     val inputBorder: Color,
+    /** Ámbar de marcador (franja bajo palabras clave, cifras sobre tinta). */
+    val ambar: Color,
+    /** Relleno de fichas activas: tinta en claro, papel en oscuro. */
+    val ink: Color,
+    val onInk: Color,
+    /** Superficie plana de tarjetas. */
+    val card: Color,
 )
+
+private val Tinta = Color(0xFF0F1B2D)
+private val Papel = Color(0xFFF4EFE6)
 
 fun darkAppColors() = AppColors(
     isDark = true,
-    bgBase = Color(0xFF060D1F),
-    bgCardGradient = listOf(Color(0xFF112240), Color(0xFF0E1C38)),
-    bgHeaderGradient = listOf(Color(0xFF0A1628), Color(0xFF1A3460)),
-    surface1 = Color(0x0AFFFFFF),
-    surface2 = Color(0x0FFFFFFF),
-    border1 = Color(0x12FFFFFF),
-    border2 = Color(0x1FFFFFFF),
-    textPrimary = Color(0xFFFFFFFF),
-    textSecondary = Color(0xFFE6EBF8),
-    textMuted = Color(0xFFAAB7D3),
-    textSubtle = Color(0xFF7E8DB8),
-    navBg = Color(0xFF0A1628),
-    navBorder = Color(0x0DFFFFFF),
-    navInactive = Color(0xFF7E8DB8),
-    coral = Color(0xFFFF4D6D),
-    coralDark = Color(0xFFE03555),
-    action = Color(0xFFD9264F),
-    actionDark = Color(0xFFB81E3F),
-    yellow = Color(0xFFFFD60A),
-    blue = Color(0xFF60A5FA),
-    green = Color(0xFF34D399),
-    progressTrack = Color(0x14FFFFFF),
-    inputBg = Color(0x0FFFFFFF),
-    inputBorder = Color(0x1AFFFFFF),
+    bgBase = Color(0xFF0A1220),
+    bgCardGradient = listOf(Color(0xFF111B2D), Color(0xFF111B2D)),
+    bgHeaderGradient = listOf(Color(0xFF0F1B2D), Color(0xFF0A3A8C)),
+    surface1 = Color(0x0DFFFFFF),
+    surface2 = Color(0x17FFFFFF),
+    border1 = Color(0x17FFFFFF),
+    border2 = Color(0x29FFFFFF),
+    textPrimary = Papel,
+    textSecondary = Color(0xFFD5DAE3),
+    textMuted = Color(0xFF9AA6BA),
+    textSubtle = Color(0xFF7D8AA1),
+    navBg = Color(0xFF131E32),
+    navBorder = Color(0x17FFFFFF),
+    navInactive = Color(0xFF8C98AE),
+    coral = Color(0xFFFF6166),
+    coralDark = Color(0xFFE3242B),
+    action = Color(0xFF1E66E0),
+    actionDark = Color(0xFF0052CC),
+    yellow = Color(0xFFF2A93B),
+    blue = Color(0xFF7FB0FF),
+    green = Color(0xFF4ADE9B),
+    progressTrack = Color(0x17FFFFFF),
+    inputBg = Color(0x0DFFFFFF),
+    inputBorder = Color(0x33FFFFFF),
+    ambar = Color(0xFFF2A93B),
+    ink = Papel,
+    onInk = Tinta,
+    card = Color(0xFF111B2D),
 )
 
 fun lightAppColors() = AppColors(
     isDark = false,
-    bgBase = Color(0xFFF8FAFF),
-    bgCardGradient = listOf(Color(0xFFFFFFFF), Color(0xFFF5F7FF)),
-    bgHeaderGradient = listOf(Color(0xFF1E3A8A), Color(0xFF2A5298)),
-    surface1 = Color(0x0A0A1628),
-    surface2 = Color(0x0F0A1628),
-    border1 = Color(0x170A1628),
-    border2 = Color(0x260A1628),
-    textPrimary = Color(0xFF060D1F),
-    textSecondary = Color(0xFF1A2E5A),
-    textMuted = Color(0xFF3D5080),
-    textSubtle = Color(0xFF5A6C9E),
-    navBg = Color(0xFFFFFFFF),
-    navBorder = Color(0x140A1628),
-    navInactive = Color(0xFF5A6C9E),
-    coral = Color(0xFFD9264F),
-    coralDark = Color(0xFFB81E3F),
-    action = Color(0xFFD9264F),
-    actionDark = Color(0xFFB81E3F),
-    yellow = Color(0xFFB45309),
-    blue = Color(0xFF2563EB),
-    green = Color(0xFF059669),
-    progressTrack = Color(0x1A0A1628),
-    inputBg = Color(0x0D0A1628),
-    inputBorder = Color(0x1F0A1628),
+    bgBase = Papel,
+    bgCardGradient = listOf(Color(0xFFFFFDF8), Color(0xFFFFFDF8)),
+    bgHeaderGradient = listOf(Tinta, Color(0xFF0052CC)),
+    surface1 = Color(0x0A0F1B2D),
+    surface2 = Color(0x120F1B2D),
+    border1 = Color(0x1A0F1B2D),
+    border2 = Color(0x330F1B2D),
+    textPrimary = Tinta,
+    textSecondary = Color(0xFF33405A),
+    textMuted = Color(0xFF5B6680),
+    textSubtle = Color(0xFF747E94),
+    navBg = Color(0xFFFFFDF8),
+    navBorder = Color(0x1A0F1B2D),
+    navInactive = Color(0xFF5B6680),
+    coral = Color(0xFFC81E25),
+    coralDark = Color(0xFFA3181E),
+    action = Color(0xFF0052CC),
+    actionDark = Color(0xFF003D99),
+    yellow = Color(0xFF8A5A0B),
+    blue = Color(0xFF0052CC),
+    green = Color(0xFF047857),
+    progressTrack = Color(0x1A0F1B2D),
+    inputBg = Color(0xFFFFFDF8),
+    inputBorder = Color(0x590F1B2D),
+    ambar = Color(0xFFF2A93B),
+    ink = Tinta,
+    onInk = Papel,
+    card = Color(0xFFFFFDF8),
 )
 
 // Gradientes predefinidos para el banner del perfil (índice 0 = gradiente del tema).
@@ -173,6 +193,27 @@ private fun AppColors.toColorScheme() = if (isDark) {
     )
 }
 
+/** Escala Material con las fuentes de la web: los componentes M3 (diálogos, campos, menús) las heredan. */
+private val InjuvTypography = Typography().run {
+    copy(
+        displayLarge = displayLarge.copy(fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold),
+        displayMedium = displayMedium.copy(fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold),
+        displaySmall = displaySmall.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+        headlineLarge = headlineLarge.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+        headlineMedium = headlineMedium.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+        headlineSmall = headlineSmall.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+        titleLarge = titleLarge.copy(fontFamily = Bricolage, fontWeight = FontWeight.Bold),
+        titleMedium = titleMedium.copy(fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold),
+        titleSmall = titleSmall.copy(fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold),
+        bodyLarge = bodyLarge.copy(fontFamily = InstrumentSans),
+        bodyMedium = bodyMedium.copy(fontFamily = InstrumentSans),
+        bodySmall = bodySmall.copy(fontFamily = InstrumentSans),
+        labelLarge = labelLarge.copy(fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold),
+        labelMedium = labelMedium.copy(fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold),
+        labelSmall = labelSmall.copy(fontFamily = InstrumentSans, fontWeight = FontWeight.Medium),
+    )
+}
+
 @Composable
 fun ProvideAppTheme(
     isDark: Boolean,
@@ -187,6 +228,6 @@ fun ProvideAppTheme(
         LocalOnThemeChange provides onThemeChange,
         LocalDensity provides Density(density.density, density.fontScale * 1.08f),
     ) {
-        MaterialTheme(colorScheme = colors.toColorScheme(), content = content)
+        MaterialTheme(colorScheme = colors.toColorScheme(), typography = InjuvTypography, content = content)
     }
 }

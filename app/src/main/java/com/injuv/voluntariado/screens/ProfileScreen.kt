@@ -2,6 +2,7 @@ package com.injuv.voluntariado.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
@@ -82,10 +83,18 @@ import com.injuv.voluntariado.data.api.anioDe
 import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.data.api.formatearHoras
 import com.injuv.voluntariado.data.api.pendienteCalificarOrg
+import com.injuv.voluntariado.components.CabeceraPerfil
+import com.injuv.voluntariado.components.Avatar
+import com.injuv.voluntariado.components.Tono
+import com.injuv.voluntariado.components.DatoPerfil
+import com.injuv.voluntariado.components.Etiqueta
+import com.injuv.voluntariado.components.BotonCirculo
+import com.injuv.voluntariado.components.Tarjeta
+import com.injuv.voluntariado.components.TituloSeccion
+import com.injuv.voluntariado.components.BotonPrimario
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
-import com.injuv.voluntariado.ui.theme.bannerPresets
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import kotlinx.coroutines.launch
 
 private enum class ProfileTab { EnCurso, Postuladas, Terminadas }
@@ -137,154 +146,50 @@ fun ProfileScreen(
         }
     }
     val displayName = usuario?.nombreCompleto?.ifBlank { null } ?: profile.name.ifBlank { "Voluntario" }
-    val bannerGradient = if (profile.bannerIndex in 1..bannerPresets.size) {
-        bannerPresets[profile.bannerIndex - 1]
-    } else {
-        T.bgHeaderGradient
-    }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(bannerGradient))
-                    .padding(horizontal = 12.dp, vertical = 16.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    MenuIconButton(onClick = onToggleMenu)
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        val u = usuario
-                        Box(
-                            modifier = Modifier
-                                .size(76.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (profile.photoUri != null) {
-                                AsyncImage(
-                                    model = android.net.Uri.parse(profile.photoUri),
-                                    contentDescription = "Foto de perfil",
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .clip(CircleShape),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                Text(
-                                    displayName.first().uppercase(),
-                                    fontFamily = SpaceGrotesk,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 28.sp,
-                                    color = Color.White,
-                                )
-                                if (u?.tiene_foto == true) {
-                                    AsyncImage(
-                                        model = ApiClient.fotoUsuario(u.id, u.foto_version),
-                                        contentDescription = "Foto de perfil",
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.matchParentSize(),
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(displayName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                        Text(
-                            listOfNotNull(
-                                anioDe(u?.created_at).ifBlank { null }?.let { "Voluntario/a desde $it" },
-                                "${formatearHoras(u?.horas_voluntariado ?: 0.0)} horas",
-                            ).joinToString(" · "),
-                            fontFamily = Outfit,
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f),
+            val u = usuario
+            CabeceraPerfil(
+                nombre = displayName,
+                onMenu = onToggleMenu,
+                onAlertas = onShowAlert,
+                accionesExtra = { BotonCirculo(Icons.Filled.Settings, "Configuración", onOpenSettings) },
+                avatar = {
+                    Avatar(
+                        displayName,
+                        url = profile.photoUri ?: u?.takeIf { it.tiene_foto }?.let { ApiClient.fotoUsuario(it.id, it.foto_version) },
+                        size = 70.dp,
+                    )
+                },
+                rol = "Voluntario/a",
+                detalle = listOfNotNull(
+                    anioDe(u?.created_at).ifBlank { null }?.let { "En la red desde $it" },
+                    "${formatearHoras(u?.horas_voluntariado ?: 0.0)} horas de voluntariado",
+                    if (profile.privacy.age && profile.age.isNotBlank()) "${profile.age} años" else null,
+                ).joinToString(" · "),
+                debajoRol = {
+                    // Insignia de la organización a la que pertenece (si es admin o miembro de una)
+                    u?.organizacion?.let { org ->
+                        Spacer(Modifier.height(6.dp))
+                        Etiqueta(
+                            "${org.nombre ?: "Organización"} · ${if (org.rol == "miembro") "Miembro" else "Administrador"}",
+                            Tono.Ambar,
+                            icono = Icons.Filled.Business,
                         )
-                        if (profile.privacy.age && profile.age.isNotBlank()) {
-                            Text(
-                                "${profile.age} años",
-                                fontFamily = Outfit,
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.8f),
-                            )
-                        }
-                        // Insignia de la organización a la que pertenece (si es admin o miembro de una)
-                        u?.organizacion?.let { org ->
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(50))
-                                    .background(Color(0xFFFFD60A).copy(alpha = 0.22f))
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                            ) {
-                                Icon(Icons.Filled.Business, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
-                                Spacer(Modifier.width(5.dp))
-                                Text(
-                                    "${org.nombre ?: "Organización"} · ${if (org.rol == "miembro") "Miembro" else "Administrador"}",
-                                    fontFamily = Outfit,
-                                    fontSize = 11.sp,
-                                    color = Color.White,
-                                )
-                            }
-                        }
-                        Spacer(Modifier.height(18.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            ProfileStat("${enCurso.size}", "En curso")
-                            ProfileStat("${postuladas.size}", "Postuladas")
-                            ProfileStat("${terminadas.size}", "Terminadas")
-                        }
-                        Spacer(Modifier.height(14.dp))
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(Color.White.copy(alpha = 0.18f))
-                                .clickable(onClick = onEditProfile)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                Icons.Filled.Edit,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(13.dp),
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "Editar perfil",
-                                fontFamily = SpaceGrotesk,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp,
-                                color = Color.White,
-                            )
-                        }
                     }
-                    Column {
-                        NotificationIconButton(onClick = onShowAlert)
-                        IconButton(onClick = onOpenSettings) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.White.copy(alpha = 0.15f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(Icons.Filled.Settings, contentDescription = "Configuración", tint = Color.White)
-                            }
-                        }
-                    }
-                }
-            }
+                },
+                datos = listOf(
+                    DatoPerfil("${enCurso.size}", "En curso"),
+                    DatoPerfil("${postuladas.size}", "Postuladas"),
+                    DatoPerfil("${terminadas.size}", "Terminadas"),
+                ),
+                accion = "Editar perfil",
+                iconoAccion = Icons.Filled.Edit,
+                onAccion = onEditProfile,
+            )
         }
 
         val locationText = listOf(profile.commune, profile.city, profile.region)
@@ -307,7 +212,7 @@ fun ProfileScreen(
         if (profile.privacy.aboutMe && profile.about.isNotBlank()) {
             item {
                 ProfileInfoCard("Acerca de mí") {
-                    Text(profile.about, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                    Text(profile.about, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
                 }
             }
         }
@@ -322,8 +227,8 @@ fun ProfileScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                 ) {
-                                    Text(skill.name, fontFamily = Outfit, fontSize = 12.sp, color = T.textSecondary)
-                                    Text("${skill.level}%", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                                    Text(skill.name, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textSecondary)
+                                    Text("${skill.level}%", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                                 }
                                 Spacer(Modifier.height(4.dp))
                                 LinearProgressIndicator(
@@ -343,24 +248,20 @@ fun ProfileScreen(
         }
 
         item {
-            Text(
-                "Mis oportunidades",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-                modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 10.dp),
-            )
+            TituloSeccion("Mis voluntariados", modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp, bottom = 12.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(T.surface1),
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(T.surface1)
+                    .border(1.5.dp, T.border1, RoundedCornerShape(12.dp))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                ProfileTabChip("En curso", isSelected = activeTab == ProfileTab.EnCurso, onClick = { activeTab = ProfileTab.EnCurso }, modifier = Modifier.weight(1f))
-                ProfileTabChip("Postuladas", isSelected = activeTab == ProfileTab.Postuladas, onClick = { activeTab = ProfileTab.Postuladas }, modifier = Modifier.weight(1f))
-                ProfileTabChip("Terminadas", isSelected = activeTab == ProfileTab.Terminadas, onClick = { activeTab = ProfileTab.Terminadas }, modifier = Modifier.weight(1f))
+                ProfileTabChip("En curso", enCurso.size, isSelected = activeTab == ProfileTab.EnCurso, onClick = { activeTab = ProfileTab.EnCurso }, modifier = Modifier.weight(1f))
+                ProfileTabChip("Postuladas", postuladas.size, isSelected = activeTab == ProfileTab.Postuladas, onClick = { activeTab = ProfileTab.Postuladas }, modifier = Modifier.weight(1f))
+                ProfileTabChip("Terminadas", terminadas.size, isSelected = activeTab == ProfileTab.Terminadas, onClick = { activeTab = ProfileTab.Terminadas }, modifier = Modifier.weight(1f))
             }
             Spacer(Modifier.height(8.dp))
         }
@@ -369,7 +270,7 @@ fun ProfileScreen(
             item {
                 Text(
                     "Tu historial de voluntariados está oculto.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 13.sp,
                     color = T.textMuted,
                     textAlign = TextAlign.Center,
@@ -448,7 +349,7 @@ fun ProfileScreen(
                                     }
                                     .padding(horizontal = 12.dp, vertical = 6.dp),
                             ) {
-                                Text("Calificar", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.White)
+                                Text("Calificar", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = Color.White)
                             }
                         }
                     } else {
@@ -458,7 +359,7 @@ fun ProfileScreen(
                     if (resenas.isEmpty()) {
                         Text(
                             "Aún no tienes reseñas públicas de organizaciones.",
-                            fontFamily = Outfit,
+                            fontFamily = InstrumentSans,
                             fontSize = 13.sp,
                             color = T.textMuted,
                             textAlign = TextAlign.Center,
@@ -481,7 +382,7 @@ fun ProfileScreen(
                                 ) {
                                     Text(
                                         p.organizacion_nombre,
-                                        fontFamily = SpaceGrotesk,
+                                        fontFamily = InstrumentSans,
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 13.sp,
                                         color = T.textPrimary,
@@ -489,20 +390,20 @@ fun ProfileScreen(
                                     )
                                     p.calificacion_org?.let { nota -> EstrellasResena(nota) }
                                 }
-                                Text(p.oportunidad_titulo, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                                Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textMuted)
                                 if (p.resena_org.isNotBlank()) {
                                     Spacer(Modifier.height(6.dp))
-                                    Text(p.resena_org, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                                    Text(p.resena_org, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
                                 }
                                 if (p.resena_usuario.isNotBlank() || p.calificacion_usuario != null) {
                                     Spacer(Modifier.height(8.dp))
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Tu evaluación", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = T.textMuted)
+                                        Text("Tu evaluación", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = T.textMuted)
                                         Spacer(Modifier.width(8.dp))
                                         p.calificacion_usuario?.let { EstrellasResena(it) }
                                     }
                                     if (p.resena_usuario.isNotBlank()) {
-                                        Text(p.resena_usuario, fontFamily = Outfit, fontSize = 12.sp, color = T.textSecondary)
+                                        Text(p.resena_usuario, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textSecondary)
                                     }
                                 }
                             }
@@ -521,13 +422,13 @@ fun ProfileScreen(
     if (eligiendoCalificar) {
         AlertDialog(
             onDismissRequest = { eligiendoCalificar = false },
-            title = { Text("¿A qué organización quieres calificar?", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
+            title = { Text("¿A qué organización quieres calificar?", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column {
                     pendientesCalificar.forEach { p ->
                         Text(
                             "${p.organizacion_nombre} · ${p.oportunidad_titulo}",
-                            fontFamily = Outfit,
+                            fontFamily = InstrumentSans,
                             fontSize = 14.sp,
                             color = T.textPrimary,
                             modifier = Modifier
@@ -568,8 +469,8 @@ fun ProfileScreen(
     retirando?.let { p ->
         AlertDialog(
             onDismissRequest = { retirando = null },
-            title = { Text("¿Retirar tu postulación?", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
-            text = { Text("Dejarás de participar en el proceso de \"${p.oportunidad_titulo}\". Esta acción no se puede deshacer.", fontFamily = Outfit) },
+            title = { Text("¿Retirar tu postulación?", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold) },
+            text = { Text("Dejarás de participar en el proceso de \"${p.oportunidad_titulo}\". Esta acción no se puede deshacer.", fontFamily = InstrumentSans) },
             confirmButton = {
                 TextButton(onClick = {
                     retirando = null
@@ -590,29 +491,22 @@ private fun ProfileInfoCard(
     content: @Composable () -> Unit,
 ) {
     val T = LocalAppColors.current
-    Column(
+    Tarjeta(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 20.dp, vertical = 7.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (icon != null) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = iconTint ?: T.coral,
-                    modifier = Modifier.size(16.dp),
-                )
-                Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null, tint = iconTint ?: T.action, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(title, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
+                trailing?.invoke()
             }
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
-            trailing?.invoke()
+            content()
         }
-        content()
     }
 }
 
@@ -620,38 +514,53 @@ private fun ProfileInfoCard(
 private fun ContactRow(icon: ImageVector, value: String) {
     val T = LocalAppColors.current
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(10.dp))
-        Text(value, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(T.action.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = null, tint = if (T.isDark) T.blue else T.action, modifier = Modifier.size(16.dp))
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(value, fontFamily = InstrumentSans, fontSize = 14.sp, color = T.textSecondary)
     }
 }
 
+/** Pestaña segmentada de la web (Tabs): se entinta al activarse y muestra el conteo. */
 @Composable
-private fun ProfileStat(value: String, label: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFFFFD60A))
-        Text(label, fontFamily = Outfit, fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-    }
-}
-
-@Composable
-private fun ProfileTabChip(label: String, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun ProfileTabChip(label: String, count: Int, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
-    Box(
+    Row(
         modifier = modifier
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(50))
-            .background(if (isSelected) Brush.linearGradient(listOf(T.action, T.actionDark)) else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)))
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (isSelected) T.ink else Color.Transparent)
             .selectable(selected = isSelected, role = Role.Tab, onClick = onClick)
-            .padding(vertical = 10.dp, horizontal = 4.dp),
-        contentAlignment = Alignment.Center,
+            .padding(horizontal = 4.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             label,
-            fontFamily = SpaceGrotesk,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-            fontSize = 12.sp,
-            color = if (isSelected) Color.White else T.textMuted,
+            fontFamily = InstrumentSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            color = if (isSelected) T.onInk else T.textMuted,
+            maxLines = 1,
+        )
+        Spacer(Modifier.width(5.dp))
+        Text(
+            "$count",
+            fontFamily = InstrumentSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 11.sp,
+            color = if (isSelected) T.onInk else T.textMuted,
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background((if (isSelected) T.onInk else T.textMuted).copy(alpha = 0.16f))
+                .padding(horizontal = 5.dp),
         )
     }
 }
@@ -670,35 +579,34 @@ private fun ActiveProgramCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .clickable(onClick = onAbrir)
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                Text(p.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                Text(p.organizacion_nombre, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
             }
             EstadoPostulacionChip(p.estado)
         }
         Spacer(Modifier.height(10.dp))
         Text(
             "${formatearHoras(p.horas_voluntariado)} horas registradas · Participación: ${p.estado_confirmacion.lowercase()}",
-            fontFamily = Outfit,
+            fontFamily = InstrumentSans,
             fontSize = 11.sp,
             color = T.textMuted,
         )
         TextButton(onClick = onForo, contentPadding = PaddingValues(0.dp)) {
-            Text("Ver foro de anuncios", fontFamily = Outfit, fontSize = 12.sp, color = T.blue)
+            Text("Ver foro de anuncios →", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = if (T.isDark) T.blue else T.action)
         }
         if (p.estado_confirmacion == "Pendiente") {
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onConfirmar(true) }, shape = RoundedCornerShape(12.dp)) {
-                    Text("Confirmar participación", fontFamily = SpaceGrotesk, fontSize = 12.sp, color = T.green)
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                BotonPrimario("Confirmar participación", onClick = { onConfirmar(true) }, alto = 44.dp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { onConfirmar(false) }) {
-                    Text("No puedo participar", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                    Text("No puedo", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textMuted)
                 }
             }
         }
@@ -718,7 +626,8 @@ private fun AppliedProgramCard(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .clickable(onClick = onAbrir)
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -726,11 +635,11 @@ private fun AppliedProgramCard(
         Icon(Icons.Filled.HourglassTop, contentDescription = null, tint = T.yellow, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-            Text(p.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
-            Text("Postulaste el ${formatearFecha(p.created_at)}", fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
+            Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+            Text(p.organizacion_nombre, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
+            Text("Postulaste el ${formatearFecha(p.created_at)}", fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textSubtle)
             TextButton(onClick = onRetirar, contentPadding = PaddingValues(0.dp)) {
-                Text("Retirar postulación", fontFamily = Outfit, fontSize = 11.sp, color = T.coral)
+                Text("Retirar postulación", fontFamily = InstrumentSans, fontSize = 11.sp, color = T.coral)
             }
         }
         EstadoPostulacionChip(p.estado)
@@ -745,15 +654,16 @@ private fun HistoryProgramCard(p: PostulacionUsuario, onDescargar: () -> Unit, m
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+            Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
             Text(
                 listOf(p.organizacion_nombre, anioDe(p.created_at)).filter { it.isNotBlank() }.joinToString(" · "),
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 12.sp,
                 color = T.textMuted,
             )
@@ -761,7 +671,7 @@ private fun HistoryProgramCard(p: PostulacionUsuario, onDescargar: () -> Unit, m
             Row(verticalAlignment = Alignment.CenterVertically) {
                 EstadoPostulacionChip(if (p.estado == "Seleccionado" && p.voluntariado_terminado) "Finalizado" else p.estado)
                 Spacer(Modifier.width(8.dp))
-                if (p.horas_voluntariado > 0) Text("${formatearHoras(p.horas_voluntariado)}h", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                if (p.horas_voluntariado > 0) Text("${formatearHoras(p.horas_voluntariado)}h", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
             }
         }
         if (p.tiene_certificado) {
@@ -804,8 +714,8 @@ private fun CalificarOrgDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {
-                Text("Califica a la organización", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold)
-                Text(postulacion.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                Text("Califica a la organización", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold)
+                Text(postulacion.organizacion_nombre, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
             }
         },
         text = {
@@ -834,8 +744,8 @@ private fun CalificarOrgDialog(
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Reseña pública", fontFamily = Outfit, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = T.textPrimary)
-                        Text("Visible en el perfil de la organización", fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                        Text("Reseña pública", fontFamily = InstrumentSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = T.textPrimary)
+                        Text("Visible en el perfil de la organización", fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textMuted)
                     }
                     Switch(
                         checked = publica,
