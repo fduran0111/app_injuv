@@ -7,7 +7,7 @@ private const val KEY_DARK_THEME = "dark_theme"
 
 fun loadDarkThemePreference(context: Context): Boolean {
     return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        .getBoolean(KEY_DARK_THEME, true)
+        .getBoolean(KEY_DARK_THEME, false)
 }
 
 fun saveDarkThemePreference(context: Context, isDark: Boolean) {
