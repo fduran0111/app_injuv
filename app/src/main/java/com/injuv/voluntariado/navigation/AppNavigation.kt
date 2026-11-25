@@ -22,6 +22,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -643,14 +644,21 @@ fun InjuvApp(
                         LaunchedEffect(Unit) {
                             runCatching { ApiClient.call { foros() } }.onSuccess { foros = it }
                         }
+                        // El backend ya devuelve solo los foros a los que el usuario tiene acceso
+                        // (los que tutorea/administran o en los que fue seleccionado): se muestran todos.
                         ForumsScreen(
-                            forums = foros.filter { !it.es_tutor }.map { f ->
+                            forums = foros.map { f ->
                                 ForumChannel(
                                     id = f.oportunidad_id,
                                     title = f.titulo,
                                     org = f.organizacion_nombre,
                                     lastMessage = f.ultimo_mensaje,
                                 )
+                            },
+                            emptyText = if (isTutorMode && foros.none { it.es_tutor }) {
+                                "No tienes tutorías asignadas como encargado. Cuando una organización te designe, el foro de esa tutoría aparecerá aquí."
+                            } else {
+                                "No tienes voluntariados en curso con foro activo."
                             },
                             onOpenForum = { id ->
                                 menuOpen = false
@@ -910,9 +918,25 @@ private fun ForoRoute(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var mensajes by remember(programId, canal) { mutableStateOf<List<ForoMensaje>>(emptyList()) }
-    LaunchedEffect(programId, canal) {
+    var cargando by remember(programId, canal) { mutableStateOf(true) }
+    var errorCarga by remember(programId, canal) { mutableStateOf<String?>(null) }
+    var reintento by remember(programId, canal) { mutableIntStateOf(0) }
+    LaunchedEffect(programId, canal, reintento) {
+        var primera = true
         while (true) {
-            runCatching { ApiClient.call { foroMensajes(programId, canal) } }.onSuccess { mensajes = it }
+            runCatching { ApiClient.call { foroMensajes(programId, canal) } }
+                .onSuccess {
+                    mensajes = it
+                    errorCarga = null
+                }
+                .onFailure {
+                    // Con mensajes previos se conservan visibles; el error solo bloquea la lista vacía.
+                    errorCarga = it.message ?: "No se pudieron cargar los mensajes."
+                }
+            if (primera) {
+                cargando = false
+                primera = false
+            }
             delay(10_000)
         }
     }
@@ -952,5 +976,14 @@ private fun ForoRoute(
             }
         },
         onBack = onBack,
+        isLoading = cargando,
+        loadError = errorCarga,
+        onRetry = { reintento++ },
+        emptyTitle = if (esChat) "Aún no hay mensajes" else "Aún no hay anuncios",
+        emptyDescription = if (esChat) {
+            "Cuando los participantes escriban, la conversación aparecerá aquí."
+        } else {
+            "Cuando el tutor publique novedades de este voluntariado, aparecerán aquí."
+        },
     )
 }

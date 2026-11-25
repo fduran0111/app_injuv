@@ -44,6 +44,7 @@ fun ForumsScreen(
     onOpenForum: (Int) -> Unit,
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
+    emptyText: String = "No tienes voluntariados en curso con foro activo.",
 ) {
     val T = LocalAppColors.current
 
@@ -54,7 +55,7 @@ fun ForumsScreen(
         item {
             AppScreenHeader(
                 title = "Foros",
-                subtitle = "Chats con tus organizaciones",
+                subtitle = "Anuncios de tus voluntariados",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
             )
@@ -63,7 +64,7 @@ fun ForumsScreen(
         if (forums.isEmpty()) {
             item {
                 Text(
-                    "No tienes voluntariados en curso con foro activo.",
+                    emptyText,
                     fontFamily = Outfit,
                     fontSize = 13.sp,
                     color = T.textMuted,
