@@ -3,8 +3,8 @@ package com.injuv.voluntariado.data
 import android.content.Context
 
 /**
- * Preferencias de notificaciones del usuario, guardadas en el teléfono. Las alertas de la app
- * se calculan al abrirla (no hay push), así que aquí solo se decide qué tipos se muestran.
+ * Preferencias de notificaciones del usuario, guardadas en el teléfono. Las notificaciones vienen
+ * del servidor (GET /notificaciones, sin push); aquí solo se decide qué tipos se muestran.
  */
 class NotificationPreferences(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -39,6 +39,14 @@ class NotificationPreferences(context: Context) {
     fun permiteAnuncios() = activas && anuncios
     fun permiteCalificar() = activas && calificar
     fun permiteResumen() = activas && resumen
+
+    /** Si una notificación del servidor se muestra según su tipo y las preferencias. */
+    fun permite(tipo: String) = when (tipo) {
+        "estado_postulacion", "postulacion_enviada" -> permiteEstados()
+        "anuncio_foro" -> permiteAnuncios()
+        "pendiente_calificar" -> permiteCalificar()
+        else -> activas
+    }
 
     /** Cuántos tipos quedaron activos, para subtítulos. */
     fun tiposActivos() = listOf(estados, anuncios, calificar, resumen).count { it }
