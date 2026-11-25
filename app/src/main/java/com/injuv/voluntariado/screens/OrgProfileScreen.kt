@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -64,6 +67,7 @@ import com.injuv.voluntariado.ui.theme.SpaceGrotesk
  * Perfil público de una organización (GET /organizaciones/{id}): banner, logo, datos,
  * certificaciones, sus convocatorias y las reseñas que dejaron los voluntarios.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OrgProfileScreen(
     organizacionId: Int,
@@ -162,24 +166,57 @@ fun OrgProfileScreen(
                     Text(org.siglas_nombre, fontFamily = Outfit, fontSize = 13.sp, color = T.textMuted)
                 }
 
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-                    listOfNotNull(
-                        org.area_trabajo.ifBlank { null },
-                        org.tipo_org.ifBlank { null },
-                        listOf(org.comuna, org.region).filter { it.isNotBlank() }.joinToString(", ").ifBlank { null },
-                    ).forEach { tag ->
-                        Text(
-                            tag,
-                            fontFamily = SpaceGrotesk,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp,
-                            color = T.coral,
-                            modifier = Modifier
-                                .padding(end = 8.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(T.coral.copy(alpha = 0.15f))
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
+                val ubicacion = listOf(org.comuna, org.region)
+                    .filter { it.isNotBlank() }
+                    .joinToString(", ")
+                if (ubicacion.isNotBlank()) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 4.dp),
+                    ) {
+                        Icon(
+                            Icons.Filled.LocationOn,
+                            contentDescription = null,
+                            tint = T.textMuted,
+                            modifier = Modifier.size(14.dp),
                         )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            ubicacion,
+                            fontFamily = Outfit,
+                            fontSize = 12.sp,
+                            color = T.textSecondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+
+                val tags = listOfNotNull(
+                    org.area_trabajo.ifBlank { null },
+                    org.tipo_org.ifBlank { null },
+                )
+                if (tags.isNotEmpty()) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 8.dp),
+                    ) {
+                        tags.forEach { tag ->
+                            Text(
+                                tag,
+                                fontFamily = SpaceGrotesk,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp,
+                                color = T.coral,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(50))
+                                    .background(T.coral.copy(alpha = 0.15f))
+                                    .padding(horizontal = 10.dp, vertical = 4.dp),
+                            )
+                        }
                     }
                 }
 
