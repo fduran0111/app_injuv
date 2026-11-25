@@ -31,28 +31,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.EstadoPostulacionChip
-import com.injuv.voluntariado.data.AvisoItem
+import com.injuv.voluntariado.data.api.Notificacion
 import com.injuv.voluntariado.data.api.PostulacionUsuario
+import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.ui.theme.LocalAppColors
 import com.injuv.voluntariado.ui.theme.Outfit
 import com.injuv.voluntariado.ui.theme.SpaceGrotesk
 
 /**
- * Notificaciones: cambios de estado de tus postulaciones, anuncios de los tutores en los
- * foros y el estado actual de las postulaciones activas.
+ * Notificaciones: las del servidor (las mismas de la campana web: postulaciones, cambios de
+ * estado, anuncios del foro, tutorías asignadas) más el estado actual de las postulaciones activas.
  */
 @Composable
 fun NotificationsScreen(
-    cambios: List<PostulacionUsuario>,
+    recientes: List<Notificacion>,
     postulaciones: List<PostulacionUsuario>,
-    avisos: List<AvisoItem>,
     onBack: () -> Unit,
-    onOpenAviso: (Int) -> Unit = {},
+    onOpen: (Notificacion) -> Unit = {},
     /** Terminados donde la ONG ya evaluó y falta la reseña del voluntario. */
     pendientesCalificar: List<PostulacionUsuario> = emptyList(),
     onCalificar: () -> Unit = {},
-    /** Estado anterior de cada postulación con novedad (para mostrar "de X a Y"). */
-    previos: Map<Int, String> = emptyMap(),
     /** Preferencia "resumen": muestra el estado actual de las postulaciones activas. */
     mostrarEstado: Boolean = true,
     /** Preferencia general apagada: se avisa y no se muestra nada. */
@@ -60,7 +58,7 @@ fun NotificationsScreen(
 ) {
     val T = LocalAppColors.current
     val activas = if (mostrarEstado) postulaciones.filter { it.estado != "Declinada por usuario" && !it.voluntariado_terminado } else emptyList()
-    val hayAlgo = !desactivadas && (cambios.isNotEmpty() || avisos.isNotEmpty() || activas.isNotEmpty() || pendientesCalificar.isNotEmpty())
+    val hayAlgo = !desactivadas && (recientes.isNotEmpty() || activas.isNotEmpty() || pendientesCalificar.isNotEmpty())
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
@@ -133,63 +131,34 @@ fun NotificationsScreen(
                 }
             }
 
-            if (cambios.isNotEmpty()) {
+            if (recientes.isNotEmpty() && !desactivadas) {
                 if (pendientesCalificar.isNotEmpty()) Spacer(Modifier.height(20.dp))
-                Seccion("Novedades")
-                cambios.forEach { p ->
+                Seccion("Recientes")
+                recientes.forEach { n ->
                     Spacer(Modifier.height(10.dp))
-                    NotifCard {
-                        Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                        Text(p.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
-                        Spacer(Modifier.height(6.dp))
+                    NotifCard(onClick = { onOpen(n) }) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            EstadoPostulacionChip(p.estado)
-                            Spacer(Modifier.width(8.dp))
-                            BadgeNuevo()
-                        }
-                        val anterior = previos[p.id].orEmpty()
-                        if (anterior.isNotBlank() && anterior != p.estado) {
-                            Spacer(Modifier.height(4.dp))
                             Text(
-                                "De “$anterior” a “${p.estado}”",
-                                fontFamily = Outfit,
-                                fontSize = 11.sp,
-                                color = T.coral,
+                                n.titulo,
+                                fontFamily = SpaceGrotesk,
+                                fontWeight = if (n.leida) FontWeight.Medium else FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                color = if (n.leida) T.textSecondary else T.textPrimary,
+                                modifier = Modifier.weight(1f),
                             )
+                            if (!n.leida) BadgeNuevo()
                         }
+                        if (!n.texto.isNullOrBlank()) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(n.texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary, maxLines = 3)
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(formatearFecha(n.created_at, ""), fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
                     }
                 }
             }
 
-            if (avisos.isNotEmpty()) {
-                Spacer(Modifier.height(20.dp))
-                Seccion("Anuncios de tus voluntariados")
-                avisos.forEach { a ->
-                    Spacer(Modifier.height(10.dp))
-                    NotifCard(onClick = { onOpenAviso(a.oportunidadId) }) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(a.titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
-                            if (a.esNuevo) BadgeNuevo()
-                        }
-                        Text(
-                            listOfNotNull(a.organizacion.ifBlank { null }, a.autor.ifBlank { null }).joinToString(" · "),
-                            fontFamily = Outfit,
-                            fontSize = 12.sp,
-                            color = T.textMuted,
-                        )
-                        if (a.texto.isNotBlank()) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(a.texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary, maxLines = 2)
-                        }
-                        if (a.fecha.isNotBlank()) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(a.fecha, fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
-                        }
-                    }
-                }
-            }
-
-            if (activas.isNotEmpty()) {
+            if (activas.isNotEmpty() && !desactivadas) {
                 Spacer(Modifier.height(20.dp))
                 Seccion("Estado de tus postulaciones")
                 activas.forEach { p ->

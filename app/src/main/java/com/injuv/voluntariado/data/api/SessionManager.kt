@@ -15,8 +15,6 @@ object SessionManager {
     private const val PREFS = "injuv_session"
     private const val KEY_TOKEN = "token"
     private const val KEY_USER = "user"
-    private const val KEY_ESTADOS = "estados_postulaciones"
-    private const val KEY_AVISOS = "avisos_vistos"
     private const val KEY_CALIFICAR = "calificar_recordadas"
 
     private lateinit var prefs: SharedPreferences
@@ -62,37 +60,6 @@ object SessionManager {
     }
 
     internal fun onSessionExpired() = cerrarSesion()
-
-    // ---------- Estados conocidos de las postulaciones (para el aviso de cambios) ----------
-
-    /** Último estado visto por postulación: id → estado. */
-    fun estadosConocidos(): Map<Int, String> =
-        prefs.getStringSet(KEY_ESTADOS, emptySet()).orEmpty().mapNotNull { linea ->
-            val (id, estado) = linea.split("|", limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
-            id.toIntOrNull()?.let { it to estado }
-        }.toMap()
-
-    fun guardarEstados(postulaciones: List<PostulacionUsuario>) {
-        prefs.edit().putStringSet(KEY_ESTADOS, postulaciones.map { "${it.id}|${it.estado}" }.toSet()).apply()
-    }
-
-    // ---------- Últimos anuncios de foro vistos (para el badge "Nuevo" en Notificaciones) ----------
-
-    /** Último mensaje de anuncios visto por voluntariado: oportunidad_id → mensaje_id. */
-    fun avisosVistos(): Map<Int, Int> =
-        prefs.getStringSet(KEY_AVISOS, emptySet()).orEmpty().mapNotNull { linea ->
-            val (op, msg) = linea.split("|", limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
-            val opId = op.toIntOrNull() ?: return@mapNotNull null
-            msg.toIntOrNull()?.let { opId to it }
-        }.toMap()
-
-    fun guardarAvisoVisto(oportunidadId: Int, mensajeId: Int) {
-        val actuales = prefs.getStringSet(KEY_AVISOS, emptySet()).orEmpty()
-            .filterNot { it.startsWith("$oportunidadId|") }
-            .toMutableSet()
-        actuales.add("$oportunidadId|$mensajeId")
-        prefs.edit().putStringSet(KEY_AVISOS, actuales).apply()
-    }
 
     // ---------- Recordatorios de calificación ya mostrados ----------
 

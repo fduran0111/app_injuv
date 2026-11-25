@@ -147,6 +147,16 @@ interface InjuvApi {
     @GET("academia/documentos")
     suspend fun academia(@Query("categoria") categoria: String? = null): List<Documento>
 
+    // --- Notificaciones (las mismas que la campana de la web; leerlas aquí las marca allá) ---
+    @GET("notificaciones")
+    suspend fun notificaciones(@Query("limite") limite: Int = 50): NotificacionesResp
+
+    @POST("notificaciones/{id}/leer")
+    suspend fun leerNotificacion(@Path("id") id: Int): Notificacion
+
+    @POST("notificaciones/leer-todas")
+    suspend fun leerTodasNotificaciones(): LeidasResp
+
     // --- Foros por voluntariado (compartidos con la plataforma) ---
     @GET("foros")
     suspend fun foros(): List<ForoCanal>

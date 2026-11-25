@@ -390,3 +390,24 @@ data class ForoMensajeBody(val canal: String, val texto: String)
 
 @Serializable
 data class FijarBody(val fijado: Boolean)
+
+/** Notificación de la plataforma (GET /notificaciones), compartida con la campana de la web. */
+@Serializable
+data class Notificacion(
+    val id: Int,
+    val tipo: String = "",
+    val titulo: String = "",
+    val texto: String? = null,
+    val enlace: String? = null,
+    val leida: Boolean = false,
+    val created_at: String? = null,
+) {
+    /** Id del voluntariado si el enlace apunta a uno ("/oportunidades/2", "/organizacion/oportunidades/2"). */
+    val oportunidadId: Int? get() = enlace?.substringAfterLast("/oportunidades/", "")?.toIntOrNull()
+}
+
+@Serializable
+data class NotificacionesResp(val items: List<Notificacion> = emptyList(), val no_leidas: Int = 0)
+
+@Serializable
+data class LeidasResp(val leidas: Int = 0)

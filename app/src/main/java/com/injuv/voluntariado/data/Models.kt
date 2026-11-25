@@ -158,15 +158,3 @@ data class UserProfile(
     val photoUri: String? = null,
     val privacy: PrivacySettings = PrivacySettings(),
 )
-
-/** Último anuncio publicado en el foro de un voluntariado (canal "anuncios"). */
-data class AvisoItem(
-    val oportunidadId: Int,
-    val titulo: String,
-    val organizacion: String,
-    val autor: String,
-    val texto: String,
-    val fecha: String,
-    val mensajeId: Int,
-    val esNuevo: Boolean,
-)
