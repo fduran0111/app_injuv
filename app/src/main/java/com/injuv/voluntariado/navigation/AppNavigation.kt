@@ -83,7 +83,7 @@ import com.injuv.voluntariado.screens.AssignTutorScreen
 import com.injuv.voluntariado.screens.AttendanceScreen
 import com.injuv.voluntariado.screens.RosterEntry
 import com.injuv.voluntariado.screens.AuthScreen
-import com.injuv.voluntariado.data.AvisoItem
+import com.injuv.voluntariado.data.api.Notificacion
 import com.injuv.voluntariado.screens.CertificadosScreen
 import com.injuv.voluntariado.screens.DocumentsScreen
 import com.injuv.voluntariado.screens.EditOrgScreen
@@ -213,29 +213,37 @@ fun InjuvApp(
         }
     }
 
-    // Aviso de cambios de estado y anuncios: compara lo que llega con lo último visto.
-    var cambios by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
-    var cambiosPrevios by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
+    // Notificaciones del servidor (las mismas de la campana web): leerlas aquí las marca allá.
+    var notificaciones by remember { mutableStateOf<List<Notificacion>>(emptyList()) }
     var postulaciones by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
-    var avisosNoLeidos by remember { mutableStateOf<List<AvisoItem>>(emptyList()) }
     var calificarPendientes by remember { mutableStateOf<List<PostulacionUsuario>>(emptyList()) }
     var showStatusAlert by remember { mutableStateOf(false) }
     val notifPrefs = remember { NotificationPreferences(context) }
+    // "Por calificar" ya tiene su sección con acción, así que ese tipo no se repite en la lista.
+    val visibles = notificaciones.filter { it.tipo != "pendiente_calificar" && notifPrefs.permite(it.tipo) }
+    val noLeidas = visibles.filter { !it.leida }
 
-    // Cada 30 s refresca postulaciones y anuncios de foros; si llega algo nuevo, el aviso se abre solo.
+    fun marcarLeidas() {
+        if (notificaciones.none { !it.leida }) return
+        notificaciones = notificaciones.map { it.copy(leida = true) }
+        scope.launch { runCatching { ApiClient.call { leerTodasNotificaciones() } } }
+    }
+
+    // Cada 30 s refresca postulaciones y notificaciones; si llega una nueva, el aviso se abre solo.
     LaunchedEffect(usuario?.id) {
         if (usuario == null) return@LaunchedEffect
+        var primera = true
         while (true) {
+            runCatching { ApiClient.call { notificaciones() } }.onSuccess { resp ->
+                val conocidas = notificaciones.map { it.id }.toSet()
+                val llegaron = resp.items.any { !it.leida && it.id !in conocidas && it.tipo != "pendiente_calificar" && notifPrefs.permite(it.tipo) }
+                notificaciones = resp.items
+                // Al abrir la app solo se avisa si hay no leídas; después, solo por las que llegan.
+                if (llegaron && (!primera || resp.no_leidas > 0)) showStatusAlert = true
+            }
+            primera = false
             runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
-                val conocidos = SessionManager.estadosConocidos()
-                val nuevos = if (conocidos.isEmpty()) emptyList()
-                    else lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
-                val llegaron = nuevos.any { n -> cambios.none { it.id == n.id } }
                 postulaciones = lista
-                cambios = nuevos
-                cambiosPrevios = nuevos.associate { it.id to (conocidos[it.id] ?: "") }
-                if (conocidos.isEmpty()) SessionManager.guardarEstados(lista)
-                if (llegaron && notifPrefs.permiteEstados()) showStatusAlert = true
                 // Voluntariados terminados pendientes de tu reseña a la organización.
                 val recordadas = SessionManager.calificarVistos()
                 val nuevasCalificar = lista.filter { it.pendienteCalificarOrg() && it.id !in recordadas }
@@ -244,30 +252,7 @@ fun InjuvApp(
                 }
                 calificarPendientes = nuevasCalificar
             }
-            val vistos = SessionManager.avisosVistos()
-            val canales = runCatching { ApiClient.call { foros() } }.getOrDefault(emptyList())
-            foros = canales
-            val nuevosAvisos = canales.mapNotNull { f ->
-                runCatching { ApiClient.call { foroMensajes(f.oportunidad_id, "anuncios") } }
-                    .getOrDefault(emptyList())
-                    .maxByOrNull { it.id }
-                    ?.takeIf { it.id > (vistos[f.oportunidad_id] ?: 0) }
-                    ?.let { m ->
-                        AvisoItem(
-                            oportunidadId = f.oportunidad_id,
-                            titulo = f.titulo,
-                            organizacion = f.organizacion_nombre,
-                            autor = m.autor_nombre,
-                            texto = m.texto,
-                            fecha = m.created_at.orEmpty().take(10),
-                            mensajeId = m.id,
-                            esNuevo = true,
-                        )
-                    }
-            }
-            val llegaronAvisos = nuevosAvisos.any { n -> avisosNoLeidos.none { it.mensajeId == n.mensajeId } }
-            avisosNoLeidos = nuevosAvisos
-            if (llegaronAvisos && notifPrefs.permiteAnuncios()) showStatusAlert = true
+            runCatching { ApiClient.call { foros() } }.onSuccess { foros = it }
             delay(30_000)
         }
     }
@@ -283,6 +268,21 @@ fun InjuvApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route ?: "home"
     val currentBaseRoute = currentRoute.substringBefore("/")
+
+    fun abrirNotificacion(n: Notificacion) {
+        if (!n.leida) {
+            notificaciones = notificaciones.map { if (it.id == n.id) it.copy(leida = true) else it }
+            scope.launch { runCatching { ApiClient.call { leerNotificacion(n.id) } } }
+        }
+        val opId = n.oportunidadId
+        when (n.tipo) {
+            "anuncio_foro" -> if (opId != null) navController.navigate("forum/$opId")
+            "nueva_postulacion" -> navController.goTo("org")
+            "encargado_asignado" -> navController.goTo("tutor_list")
+            "pendiente_calificar" -> navController.goTo("profile")
+            else -> navController.goTo("applications")
+        }
+    }
 
     // Al entrar a estas pantallas se refrescan las tutorías: si la ONG te acaba de designar,
     // la pestaña Tutoría aparece sin tener que cerrar sesión.
@@ -429,51 +429,17 @@ fun InjuvApp(
                         )
                     }
                     composable("notifications") {
-                        // Último anuncio del foro de cada voluntariado del usuario.
-                        var avisos by remember { mutableStateOf<List<AvisoItem>>(emptyList()) }
                         LaunchedEffect(Unit) {
-                            runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { lista ->
-                                val conocidos = SessionManager.estadosConocidos()
-                                postulaciones = lista
-                                cambios = lista.filter { conocidos[it.id] != null && conocidos[it.id] != it.estado }
-                                cambiosPrevios = cambios.associate { it.id to (conocidos[it.id] ?: "") }
-                            }
-                            val vistos = SessionManager.avisosVistos()
-                            val canales = runCatching { ApiClient.call { foros() } }.getOrDefault(emptyList())
-                            avisos = canales.mapNotNull { f ->
-                                runCatching { ApiClient.call { foroMensajes(f.oportunidad_id, "anuncios") } }
-                                    .getOrDefault(emptyList())
-                                    .maxByOrNull { it.id }
-                                    ?.let { m ->
-                                        AvisoItem(
-                                            oportunidadId = f.oportunidad_id,
-                                            titulo = f.titulo,
-                                            organizacion = f.organizacion_nombre,
-                                            autor = m.autor_nombre,
-                                            texto = m.texto,
-                                            fecha = m.created_at.orEmpty().take(10),
-                                            mensajeId = m.id,
-                                            esNuevo = m.id > (vistos[f.oportunidad_id] ?: 0),
-                                        )
-                                    }
-                            }
+                            runCatching { ApiClient.call { notificaciones() } }.onSuccess { notificaciones = it.items }
+                            runCatching { ApiClient.call { misPostulaciones() } }.onSuccess { postulaciones = it }
                         }
-                        // Al salir, todo lo visto queda marcado como leído.
-                        DisposableEffect(Unit) {
-                            onDispose {
-                                SessionManager.guardarEstados(postulaciones)
-                                cambios = emptyList()
-                                avisos.forEach { SessionManager.guardarAvisoVisto(it.oportunidadId, it.mensajeId) }
-                            }
-                        }
-                        val notifPrefs = remember { NotificationPreferences(context) }
+                        // Al salir, todo lo visto queda leído también en la web.
+                        DisposableEffect(Unit) { onDispose { marcarLeidas() } }
                         NotificationsScreen(
-                            cambios = if (notifPrefs.permiteEstados()) cambios else emptyList(),
-                            previos = cambiosPrevios,
+                            recientes = visibles,
                             postulaciones = postulaciones,
-                            avisos = if (notifPrefs.permiteAnuncios()) avisos else emptyList(),
                             onBack = { navController.popBackStack() },
-                            onOpenAviso = { id -> navController.navigate("forum/$id") },
+                            onOpen = { abrirNotificacion(it) },
                             pendientesCalificar = if (notifPrefs.permiteCalificar()) postulaciones.filter { it.pendienteCalificarOrg() } else emptyList(),
                             onCalificar = { navController.goTo("profile") },
                             mostrarEstado = notifPrefs.permiteResumen(),
@@ -729,10 +695,12 @@ fun InjuvApp(
 
     if (showStatusAlert) {
         StatusAlertSheet(
-            cambios = if (notifPrefs.permiteEstados()) cambios else emptyList(),
-            previos = cambiosPrevios,
+            nuevas = noLeidas,
             postulaciones = postulaciones,
-            avisos = if (notifPrefs.permiteAnuncios()) avisosNoLeidos else emptyList(),
+            onOpen = {
+                showStatusAlert = false
+                abrirNotificacion(it)
+            },
             mostrarResumen = notifPrefs.permiteResumen(),
             porCalificar = if (notifPrefs.permiteCalificar()) calificarPendientes else emptyList(),
             onCalificar = {
@@ -743,12 +711,8 @@ fun InjuvApp(
             },
             onClose = {
                 showStatusAlert = false
-                // Al ver el aviso, los estados, anuncios y recordatorios pasan a ser los "conocidos".
-                SessionManager.guardarEstados(postulaciones)
-                cambios = emptyList()
-                cambiosPrevios = emptyMap()
-                avisosNoLeidos.forEach { SessionManager.guardarAvisoVisto(it.oportunidadId, it.mensajeId) }
-                avisosNoLeidos = emptyList()
+                // Al ver el aviso, las notificaciones quedan leídas (también en la web).
+                marcarLeidas()
                 calificarPendientes.forEach { SessionManager.guardarCalificarVisto(it.id) }
                 calificarPendientes = emptyList()
             },
