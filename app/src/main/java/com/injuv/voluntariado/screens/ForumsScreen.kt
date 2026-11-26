@@ -50,6 +50,7 @@ fun ForumsScreen(
     onOpenForum: (Int) -> Unit,
     onShowAlert: () -> Unit,
     onToggleMenu: () -> Unit,
+    emptyText: String = "No tienes voluntariados en curso con foro activo.",
 ) {
     val T = LocalAppColors.current
 
@@ -61,7 +62,7 @@ fun ForumsScreen(
             AppScreenHeader(
                 title = "Foros de voluntariado",
                 resaltado = "Foros",
-                subtitle = "Anuncios y chat con tus organizaciones",
+                subtitle = "Anuncios de tus voluntariados",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
             )
@@ -71,7 +72,7 @@ fun ForumsScreen(
             item {
                 Vacio(
                     "Aún no tienes foros activos",
-                    "Cuando quedes seleccionado en un voluntariado, aquí verás los anuncios y el chat con tu organización.",
+                    emptyText,
                     icono = Icons.Outlined.Forum,
                 )
             }

@@ -6,14 +6,17 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
+import androidx.core.view.WindowInsetsControllerCompat
 import com.injuv.voluntariado.R
 
 // Tipografías de la plataforma web: Bricolage Grotesque (títulos y cifras) e Instrument Sans (texto y UI).
@@ -170,8 +173,8 @@ private fun AppColors.toColorScheme() = if (isDark) {
         surfaceVariant = surface1,
         onSurfaceVariant = textSecondary,
         outline = border2,
-        error = Color(0xFFF87171),
-        onError = Color(0xFF060D1F),
+        error = Color(0xFFFF6B6E),
+        onError = Color(0xFF0B1220),
     )
 } else {
     lightColorScheme(
@@ -188,7 +191,7 @@ private fun AppColors.toColorScheme() = if (isDark) {
         surfaceVariant = surface1,
         onSurfaceVariant = textSecondary,
         outline = border2,
-        error = Color(0xFFDC2626),
+        error = Color(0xFFB91C1C),
         onError = Color.White,
     )
 }
@@ -221,6 +224,17 @@ fun ProvideAppTheme(
     content: @Composable () -> Unit,
 ) {
     val colors = if (isDark) darkAppColors() else lightAppColors()
+    // Íconos de las barras del sistema según el tema de la APP (no el del sistema):
+    // enableEdgeToEdge() solo detecta el modo oscuro del sistema, así que se corrige aquí
+    // y reacciona al toggle de Ajustes sin recrear la Activity.
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+        WindowInsetsControllerCompat(window, view).apply {
+            isAppearanceLightStatusBars = !colors.isDark
+            isAppearanceLightNavigationBars = !colors.isDark
+        }
+    }
     val density = LocalDensity.current
     // +8% de escala tipográfica respecto a la del sistema: mismo aumento en ambos modos.
     CompositionLocalProvider(

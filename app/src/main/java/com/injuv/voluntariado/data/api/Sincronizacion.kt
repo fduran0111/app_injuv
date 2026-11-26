@@ -7,6 +7,7 @@ import com.injuv.voluntariado.data.ForumMessage
 import com.injuv.voluntariado.data.UserProfile
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -155,7 +156,16 @@ fun ForoMensaje.aForumMessage(): ForumMessage = ForumMessage(
 private fun fechaCorta(iso: String?): String {
     if (iso.isNullOrBlank()) return ""
     return runCatching {
-        val fecha = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).parse(iso.take(19))!!
-        SimpleDateFormat("d MMM, HH:mm", Locale("es", "CL")).format(fecha)
+        // El backend guarda `datetime.now()` naive en columnas DateTime sin zona horaria;
+        // el servidor (Render) corre en UTC, así que el ISO recibido representa UTC.
+        // Se interpreta como UTC y se muestra en la zona local de Chile (America/Santiago),
+        // que ajusta sola el horario de verano/invierno.
+        val parser = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }
+        val fecha = parser.parse(iso.take(19))!!
+        SimpleDateFormat("d MMM, HH:mm", Locale("es", "CL")).apply {
+            timeZone = TimeZone.getTimeZone("America/Santiago")
+        }.format(fecha)
     }.getOrDefault(iso)
 }
