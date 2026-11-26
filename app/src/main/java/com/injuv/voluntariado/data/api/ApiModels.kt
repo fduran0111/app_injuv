@@ -138,6 +138,8 @@ data class PreguntaItem(
     /** "si_no" | "alternativas" | "texto" */
     val tipo: String = "si_no",
     val opciones: List<String> = emptyList(),
+    /** Solo en "alternativas": el postulante puede marcar varias (se envían separadas por "\n"). */
+    val multiple: Boolean = false,
     val obligatoria: Boolean = true,
 )
 
