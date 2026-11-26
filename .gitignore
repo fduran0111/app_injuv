@@ -21,3 +21,10 @@ injuv-android/
 .devin/
 DESIGN.md
 PRODUCT.md
+# Firma release (nunca versionar)
+*.jks
+*.keystore
+keystore.properties
+/app/release/
+*.apk
+*.aab
