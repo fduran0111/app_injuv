@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.injuv.voluntariado.components.AppScreenHeader
+import com.injuv.voluntariado.components.TituloSeccion
+import com.injuv.voluntariado.components.TarjetaNoticia
 import com.injuv.voluntariado.components.EstadoCarga
 import com.injuv.voluntariado.components.Vacio
 import com.injuv.voluntariado.components.rememberCarga
@@ -26,8 +28,7 @@ import com.injuv.voluntariado.data.api.Noticia
 import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.data.api.minutosLectura
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
 
 /** Noticias publicadas (GET /noticias). Tocar una tarjeta abre el detalle. */
 @Composable
@@ -45,8 +46,9 @@ fun NewsScreen(
     ) {
         item {
             AppScreenHeader(
-                title = "Noticias",
-                subtitle = "Novedades del programa de voluntariado",
+                title = "Noticias de la red",
+                resaltado = "red",
+                subtitle = "Novedades del voluntariado juvenil INJUV",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
             )
@@ -55,69 +57,18 @@ fun NewsScreen(
         if (carga.datos == null) {
             item { EstadoCarga(carga) {} }
         } else if (noticias.isEmpty()) {
-            item { Vacio("Aún no hay noticias publicadas") }
+            item { Vacio("Aún no hay noticias publicadas", "Cuando INJUV o las organizaciones publiquen novedades aparecerán aquí.") }
         }
         itemsIndexed(noticias, key = { _, n -> n.id }) { index, news ->
-            NewsCard(
+            if (index == 1) {
+                TituloSeccion("Más noticias", colorTrazo = LocalAppColors.current.coral, modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 4.dp))
+            }
+            TarjetaNoticia(
                 news,
                 destacada = index == 0,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
                 onClick = { onOpenDetail(news.id) },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
-        }
-    }
-}
-
-@Composable
-private fun NewsCard(news: Noticia, destacada: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit = {}) {
-    val T = LocalAppColors.current
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
-            .clickable(onClick = onClick),
-    ) {
-        news.imagen?.let { archivo ->
-            AsyncImage(
-                model = ApiClient.imagenNoticia(archivo),
-                contentDescription = news.titulo,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(if (destacada) 170.dp else 120.dp),
-            )
-        }
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                news.autor_nombre.uppercase(),
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 10.sp,
-                color = T.coral,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                news.titulo,
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = if (destacada) 16.sp else 14.sp,
-                color = T.textPrimary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(news.resumen.ifBlank { news.contenido }, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, maxLines = 2)
-            Spacer(Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(formatearFecha(news.fecha_publicacion), fontFamily = Outfit, fontSize = 11.sp, color = T.textSubtle)
-                Text(
-                    "${minutosLectura(news.contenido)} min de lectura",
-                    fontFamily = Outfit,
-                    fontSize = 11.sp,
-                    color = T.textSubtle,
-                )
-            }
         }
     }
 }

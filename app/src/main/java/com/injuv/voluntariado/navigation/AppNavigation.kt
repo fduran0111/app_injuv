@@ -29,6 +29,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.border
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +90,7 @@ import com.injuv.voluntariado.data.ForumChannel
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SessionPreferences
+import com.injuv.voluntariado.data.Skill
 import com.injuv.voluntariado.data.UserProfile
 import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.screens.AcademyScreen
@@ -105,7 +121,7 @@ import com.injuv.voluntariado.screens.TutorDashboardScreen
 import com.injuv.voluntariado.screens.TutorListScreen
 import com.injuv.voluntariado.screens.computeAgeYears
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -298,6 +314,8 @@ fun InjuvApp(
     val T = LocalAppColors.current
     val onShowAlert = { showStatusAlert = true }
     val onToggleMenu = { menuOpen = !menuOpen }
+    // Área elegida en "Explora por área" (Inicio) que Postular aplica como filtro al abrirse.
+    var areaFiltro by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         containerColor = T.bgBase,
@@ -343,10 +361,21 @@ fun InjuvApp(
                                 menuOpen = false
                                 navController.navigate("news_detail/$id")
                             },
+                            onVerTodasNoticias = {
+                                menuOpen = false
+                                navController.goTo("news")
+                            },
+                            onBuscarArea = { area ->
+                                menuOpen = false
+                                areaFiltro = area
+                                navController.goTo("applications")
+                            },
                         )
                     }
                     composable("applications") {
                         ApplicationsScreen(
+                            areaInicial = areaFiltro,
+                            onAreaAplicada = { areaFiltro = null },
                             onOpenDetail = { id ->
                                 menuOpen = false
                                 navController.navigate("application_detail/$id")
@@ -737,36 +766,60 @@ private fun BottomBar(
     onNavigate: (String) -> Unit,
 ) {
     val T = LocalAppColors.current
-    androidx.compose.material3.NavigationBar(
-        containerColor = T.navBg,
-        contentColor = T.navInactive,
+    // Cápsula flotante: separada de los bordes, con sombra suave y el destino activo en una píldora roja.
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(start = 14.dp, end = 14.dp, bottom = 10.dp, top = 4.dp),
     ) {
-        BottomNavItem.values()
-            .filter { it != BottomNavItem.Tutor || isTutor }
-            .filter { it != BottomNavItem.Org || isOrg }
-            .filter { it != BottomNavItem.Applications || (!isOrg && !isAdmin) }
-            .forEach { item ->
-            val isActive = item.route == currentRoute || (item == BottomNavItem.Tutor && currentRoute == "tutor_home")
-            NavigationBarItem(
-                selected = isActive,
-                onClick = { onNavigate(item.route) },
-                icon = { bottomNavIcon(item = item, active = isActive) },
-                label = {
-                    Text(
-                        text = item.label,
-                        fontFamily = SpaceGrotesk,
-                        fontSize = 10.sp,
-                        fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
-                    )
-                },
-                colors = androidx.compose.material3.NavigationBarItemDefaults.colors(
-                    selectedIconColor = T.coral,
-                    selectedTextColor = T.coral,
-                    unselectedIconColor = T.navInactive,
-                    unselectedTextColor = T.navInactive,
-                    indicatorColor = T.bgBase,
-                ),
-            )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(68.dp)
+                .shadow(18.dp, RoundedCornerShape(26.dp), ambientColor = Color(0x330A1220), spotColor = Color(0x590A1220))
+                .clip(RoundedCornerShape(26.dp))
+                .background(T.navBg)
+                .border(1.dp, T.navBorder, RoundedCornerShape(26.dp))
+                .padding(horizontal = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BottomNavItem.values()
+                .filter { it != BottomNavItem.Tutor || isTutor }
+                .filter { it != BottomNavItem.Org || isOrg }
+                .filter { it != BottomNavItem.Applications || (!isOrg && !isAdmin) }
+                .forEach { item ->
+                    val isActive = item.route == currentRoute || (item == BottomNavItem.Tutor && currentRoute == "tutor_home")
+                    val tint = if (isActive) T.coral else T.navInactive
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(18.dp))
+                            .selectable(selected = isActive, role = Role.Tab, onClick = { onNavigate(item.route) }),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(width = 54.dp, height = 30.dp)
+                                .clip(RoundedCornerShape(50))
+                                .background(if (isActive) T.coral.copy(alpha = 0.14f) else Color.Transparent),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            bottomNavIcon(item = item, active = isActive, tint = tint)
+                        }
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = item.label,
+                            fontFamily = InstrumentSans,
+                            fontSize = 11.sp,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                            color = tint,
+                            maxLines = 1,
+                        )
+                    }
+                }
         }
     }
 }
@@ -779,6 +832,8 @@ private fun UserProfile.completarCon(u: Usuario): UserProfile = copy(
     region = region.ifBlank { u.region },
     city = city.ifBlank { u.ciudad },
     commune = commune.ifBlank { u.comuna },
+    about = about.ifBlank { u.acerca_de },
+    skills = skills.ifEmpty { u.habilidades.map { Skill(it.nombre, it.nivel) } },
 )
 
 /** Adapta un voluntariado de la API al modelo que usa el panel de tutor. */

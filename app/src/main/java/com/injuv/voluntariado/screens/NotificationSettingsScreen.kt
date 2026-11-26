@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,9 +44,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.data.NotificationPreferences
+import com.injuv.voluntariado.components.SubHeader
+import com.injuv.voluntariado.components.TituloSeccion
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 /**
  * Preferencias de notificaciones: interruptor general y un tipo por cada sección de la
@@ -67,32 +70,11 @@ fun NotificationSettingsScreen(
     var resumen by remember { mutableStateOf(prefs.resumen) }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column(modifier = Modifier.padding(end = 16.dp)) {
-                Text(
-                    "Notificaciones",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 22.sp,
-                    color = Color.White,
-                )
-                Text(
-                    "Qué alertas quieres recibir",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Notificaciones",
+            onBack = onBack,
+            subtitulo = "Qué alertas quieres recibir",
+        )
 
         Column(
             modifier = Modifier
@@ -112,13 +94,7 @@ fun NotificationSettingsScreen(
             )
 
             Spacer(Modifier.height(22.dp))
-            Text(
-                "Tipos de notificación",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textMuted,
-            )
+            TituloSeccion("Tipos de notificación")
             Spacer(Modifier.height(10.dp))
             PrefToggle(
                 icon = Icons.Filled.SwapHoriz,
@@ -173,7 +149,8 @@ fun NotificationSettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .background(T.card)
+                    .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                     .clickable(onClick = onVerNotificaciones)
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -184,8 +161,8 @@ fun NotificationSettingsScreen(
                         .weight(1f)
                         .padding(horizontal = 12.dp),
                 ) {
-                    Text("Ver notificaciones", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
-                    Text("Revisa las alertas recibidas", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                    Text("Ver notificaciones", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+                    Text("Revisa las alertas recibidas", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                 }
                 Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
             }
@@ -207,7 +184,8 @@ private fun PrefToggle(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -217,8 +195,8 @@ private fun PrefToggle(
                 .weight(1f)
                 .padding(horizontal = 12.dp),
         ) {
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (enabled) T.textPrimary else T.textMuted)
-            Text(subtitle, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+            Text(title, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = if (enabled) T.textPrimary else T.textMuted)
+            Text(subtitle, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
         }
         Switch(
             checked = checked && enabled,

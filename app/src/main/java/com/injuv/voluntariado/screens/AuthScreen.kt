@@ -1,7 +1,23 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.em
+import androidx.core.view.WindowCompat
+import com.injuv.voluntariado.components.BarraBicolor
+import com.injuv.voluntariado.components.BotonPrimario
+import com.injuv.voluntariado.components.LogoInjuv
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,8 +89,8 @@ import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.data.api.limpiarRut
 import kotlinx.coroutines.launch
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -100,23 +116,36 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
     var showDatePicker by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
+    // Campos sobre vidrio oscuro: siempre claros, sin importar el tema de la app.
     val fieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = T.coral,
-        unfocusedBorderColor = T.inputBorder,
-        focusedLabelColor = T.coral,
-        unfocusedLabelColor = T.textMuted,
-        cursorColor = T.coral,
-        focusedTextColor = T.textPrimary,
-        unfocusedTextColor = T.textPrimary,
-        focusedTrailingIconColor = T.textMuted,
-        unfocusedTrailingIconColor = T.textMuted,
-        focusedLeadingIconColor = T.coral,
-        unfocusedLeadingIconColor = T.textMuted,
-        focusedSupportingTextColor = T.textMuted,
-        unfocusedSupportingTextColor = T.textMuted,
-        focusedPlaceholderColor = T.textSubtle,
-        unfocusedPlaceholderColor = T.textSubtle,
+        focusedBorderColor = Color(0xFF8DB9FF),
+        unfocusedBorderColor = Color.White.copy(alpha = 0.26f),
+        focusedLabelColor = Color(0xFF8DB9FF),
+        unfocusedLabelColor = Color.White.copy(alpha = 0.72f),
+        cursorColor = Color(0xFFF2A93B),
+        focusedTextColor = Color.White,
+        unfocusedTextColor = Color.White,
+        focusedContainerColor = Color.White.copy(alpha = 0.07f),
+        unfocusedContainerColor = Color.White.copy(alpha = 0.05f),
+        focusedTrailingIconColor = Color.White.copy(alpha = 0.8f),
+        unfocusedTrailingIconColor = Color.White.copy(alpha = 0.65f),
+        focusedLeadingIconColor = Color(0xFF8DB9FF),
+        unfocusedLeadingIconColor = Color.White.copy(alpha = 0.65f),
+        focusedSupportingTextColor = Color.White.copy(alpha = 0.65f),
+        unfocusedSupportingTextColor = Color.White.copy(alpha = 0.65f),
+        focusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
+        unfocusedPlaceholderColor = Color.White.copy(alpha = 0.45f),
     )
+
+    // Íconos claros en la barra de estado mientras se ve la foto.
+    val view = LocalView.current
+    DisposableEffect(Unit) {
+        val window = (view.context as? android.app.Activity)?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, view) }
+        val previo = controller?.isAppearanceLightStatusBars
+        controller?.isAppearanceLightStatusBars = false
+        onDispose { if (previo != null) controller.isAppearanceLightStatusBars = previo }
+    }
 
     val birthText = birthMillis?.let { millis ->
         SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
@@ -124,98 +153,79 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
             .format(Date(millis))
     } ?: ""
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(T.bgBase)
-            .navigationBarsPadding()
-            .imePadding(),
+            .background(Color(0xFF0A1220)),
     ) {
-        Column(
+        val asienta = remember { Animatable(1.08f) }
+        LaunchedEffect(Unit) { asienta.animateTo(1f, tween(1800, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f))) }
+        Image(
+            painter = painterResource(R.drawable.foto_acceso),
+            contentDescription = "Cumbre de voluntariado juvenil INJUV",
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
             modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient)).statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 36.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_injuv_logo),
-                contentDescription = "INJUV",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(88.dp),
-                contentScale = ContentScale.Fit,
-            )
-            Spacer(Modifier.height(16.dp))
-            Text(
-                if (isLogin) "INJUV Voluntariado" else "Crear cuenta",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                color = Color.White,
-            )
-            Text(
-                if (isLogin) "Ingresa para continuar" else "Regístrate para comenzar a participar",
-                fontFamily = Outfit,
-                fontSize = 13.sp,
-                color = Color.White.copy(alpha = 0.85f),
-            )
-        }
+                .fillMaxSize()
+                .graphicsLayer { scaleX = asienta.value; scaleY = asienta.value },
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to Color(0x8C0A1220),
+                        0.32f to Color(0x660A1220),
+                        0.58f to Color(0xE00A1220),
+                        1f to Color(0xFA0A1220),
+                    ),
+                ),
+        )
 
         Column(
             modifier = Modifier
-                .weight(1f)
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(horizontal = 20.dp),
         ) {
+            LogoInjuv(Modifier.padding(top = 14.dp).height(30.dp), blanco = true)
+            Spacer(Modifier.height(if (isLogin) 150.dp else 36.dp))
+
+            LineaSube(if (isLogin) "Bienvenido/a" else "Súmate a la red", Color.White, retraso = 0, clave = isLogin)
+            LineaSube(if (isLogin) "de vuelta" else "de voluntariado", Color(0xFFF2A93B), retraso = 110, clave = isLogin)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                if (isLogin) "Ingresa para postular y seguir tus voluntariados." else "Crea tu cuenta y postula a voluntariados en todo Chile.",
+                fontFamily = InstrumentSans,
+                fontSize = 15.sp,
+                color = Color.White.copy(alpha = 0.82f),
+            )
+            Spacer(Modifier.height(22.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFF0F1B2D).copy(alpha = 0.64f))
+                    .border(
+                        1.dp,
+                        Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.30f), Color.White.copy(alpha = 0.06f))),
+                        RoundedCornerShape(24.dp),
+                    )
+                    .padding(18.dp),
+            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(50))
-                    .background(T.surface1),
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.White.copy(alpha = 0.08f))
+                    .padding(4.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (isLogin) Brush.linearGradient(listOf(T.action, T.actionDark))
-                            else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
-                        )
-                        .heightIn(min = 48.dp)
-                        .selectable(selected = isLogin, role = Role.Tab) { isLogin = true; error = null }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "Iniciar sesión",
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = if (isLogin) FontWeight.SemiBold else FontWeight.Medium,
-                        fontSize = 13.sp,
-                        color = if (isLogin) Color.White else T.textMuted,
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            if (!isLogin) Brush.linearGradient(listOf(T.action, T.actionDark))
-                            else Brush.linearGradient(listOf(Color.Transparent, Color.Transparent)),
-                        )
-                        .heightIn(min = 48.dp)
-                        .selectable(selected = !isLogin, role = Role.Tab) { isLogin = false; error = null }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "Crear cuenta",
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = if (!isLogin) FontWeight.SemiBold else FontWeight.Medium,
-                        fontSize = 13.sp,
-                        color = if (!isLogin) Color.White else T.textMuted,
-                    )
-                }
+                PestanaVidrio("Iniciar sesión", activa = isLogin, modifier = Modifier.weight(1f)) { isLogin = true; error = null }
+                PestanaVidrio("Crear cuenta", activa = !isLogin, modifier = Modifier.weight(1f)) { isLogin = false; error = null }
             }
 
             Spacer(Modifier.height(22.dp))
@@ -343,17 +353,22 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
 
             if (error != null) {
                 Spacer(Modifier.height(10.dp))
-                Text(error!!, fontFamily = Outfit, fontSize = 13.sp, color = T.coral)
+                Text(error!!, fontFamily = InstrumentSans, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = Color(0xFFFF9EA1))
             }
 
             Spacer(Modifier.height(22.dp))
 
-            Button(
+            BotonPrimario(
+                texto = if (isLogin) "Entrar" else "Crear mi cuenta",
+                icono = Icons.AutoMirrored.Filled.ArrowForward,
+                cargando = loading,
+                color = Color(0xFF1E66E0),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = {
                     val result = validateAuth(isLogin, name, lastName, email, rut, birthMillis, password, confirm)
                     if (result != null) {
                         error = result
-                        return@Button
+                        return@BotonPrimario
                     }
                     loading = true
                     scope.launch {
@@ -385,30 +400,13 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                         }
                     }
                 },
-                enabled = !loading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = T.action, contentColor = Color.White),
-            ) {
-                if (loading) {
-                    CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(20.dp))
-                } else {
-                    Text(
-                        if (isLogin) "Entrar" else "Registrarse",
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp,
-                    )
-                }
-            }
+            )
             if (loading) {
                 Text(
                     "Si el servidor estaba inactivo, la primera conexión puede tardar hasta un minuto.",
-                    fontFamily = Outfit,
-                    fontSize = 11.sp,
-                    color = T.textSubtle,
+                    fontFamily = InstrumentSans,
+                    fontSize = 12.sp,
+                    color = Color.White.copy(alpha = 0.65f),
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .padding(top = 8.dp),
@@ -420,12 +418,25 @@ fun AuthScreen(onAuthenticated: (usuario: Usuario, birthDateMillis: Long?) -> Un
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             ) {
                 Text(
-                    if (isLogin) "¿No tienes una cuenta? Regístrate aquí" else "¿Ya tienes una cuenta? Inicia sesión aquí",
-                    fontFamily = Outfit,
-                    fontSize = 13.sp,
-                    color = T.blue,
+                    if (isLogin) "¿No tienes cuenta? Regístrate gratis" else "¿Ya tienes cuenta? Inicia sesión",
+                    fontFamily = InstrumentSans,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    color = Color(0xFF8DB9FF),
                 )
             }
+            }
+
+            Spacer(Modifier.height(22.dp))
+            BarraBicolor(Modifier.width(72.dp).clip(RoundedCornerShape(50)), alto = 4.dp)
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Instituto Nacional de la Juventud · Gobierno de Chile",
+                fontFamily = InstrumentSans,
+                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.height(20.dp))
         }
     }
 
@@ -506,4 +517,48 @@ fun computeAgeYears(birthMillis: Long): Int {
         age--
     }
     return age
+}
+
+
+/** Línea de titular que sube desde detrás de su caja al aparecer (`.linea` de la web). */
+@Composable
+private fun LineaSube(texto: String, color: Color, retraso: Int, clave: Any) {
+    val avance = remember(clave) { Animatable(1f) }
+    LaunchedEffect(clave) {
+        kotlinx.coroutines.delay(retraso.toLong())
+        avance.animateTo(0f, tween(900, easing = CubicBezierEasing(0.23f, 1f, 0.32f, 1f)))
+    }
+    Box(Modifier.clipToBounds()) {
+        Text(
+            texto,
+            fontFamily = Bricolage,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 44.sp,
+            lineHeight = 47.sp,
+            letterSpacing = (-0.03).em,
+            color = color,
+            modifier = Modifier.graphicsLayer { translationY = size.height * 1.05f * avance.value },
+        )
+    }
+}
+
+/** Pestaña del selector Iniciar sesión / Crear cuenta sobre el vidrio. */
+@Composable
+private fun PestanaVidrio(texto: String, activa: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Box(
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .clip(RoundedCornerShape(9.dp))
+            .background(if (activa) Color(0xFFF4EFE6) else Color.Transparent)
+            .selectable(selected = activa, role = Role.Tab, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            texto,
+            fontFamily = InstrumentSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 14.sp,
+            color = if (activa) Color(0xFF0F1B2D) else Color.White.copy(alpha = 0.75f),
+        )
+    }
 }

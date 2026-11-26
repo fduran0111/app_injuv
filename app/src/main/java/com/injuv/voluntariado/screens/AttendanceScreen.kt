@@ -41,6 +41,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import com.injuv.voluntariado.components.SubHeader
+import androidx.compose.foundation.border
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -54,8 +56,8 @@ import com.injuv.voluntariado.ui.theme.LocalAppColors
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import kotlinx.coroutines.launch
 
 /** Un voluntario de la lista: [id] es el de su postulación. */
@@ -101,46 +103,37 @@ fun AttendanceScreen(
             .fillMaxSize()
             .background(T.bgBase),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column {
-                Text(
-                    "Pasar lista",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
-                Text(programTitle, fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+        SubHeader(
+            titulo = "Pasar lista",
+            onBack = onBack,
+            subtitulo = programTitle,
+            extra = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
-                        .heightIn(min = 48.dp)
-                        .clickable { showDatePicker = true },
+                        .padding(top = 6.dp)
+                        .heightIn(min = 40.dp)
+                        .clip(RoundedCornerShape(50))
+                        .border(1.5.dp, T.border2, RoundedCornerShape(50))
+                        .clickable { showDatePicker = true }
+                        .padding(horizontal = 12.dp),
                 ) {
                     Icon(
                         Icons.Filled.CalendarToday,
                         contentDescription = "Elegir fecha",
-                        tint = Color.White.copy(alpha = 0.85f),
-                        modifier = Modifier.size(12.dp),
+                        tint = T.action,
+                        modifier = Modifier.size(14.dp),
                     )
                     Text(
                         "  ${labelFor(dateKey)}",
-                        fontFamily = Outfit,
-                        fontSize = 12.sp,
-                        color = Color.White.copy(alpha = 0.85f),
+                        fontFamily = InstrumentSans,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 13.sp,
+                        color = T.textPrimary,
                     )
                 }
-            }
-        }
+            },
+        )
 
         Row(
             modifier = Modifier
@@ -150,14 +143,14 @@ fun AttendanceScreen(
         ) {
             Text(
                 "${present.size} presentes",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 color = T.green,
             )
             Text(
                 "${roster.size - present.size} ausentes",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 color = T.textMuted,
@@ -176,7 +169,8 @@ fun AttendanceScreen(
                         .fillMaxWidth()
                         .padding(vertical = 6.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.linearGradient(T.bgCardGradient))
+                        .background(T.card)
+                        .border(1.dp, T.border1, RoundedCornerShape(14.dp))
                         .then(
                             if (readOnly) {
                                 Modifier
@@ -196,7 +190,7 @@ fun AttendanceScreen(
                     ) {
                         Text(
                             name.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString("").uppercase(),
-                            fontFamily = SpaceGrotesk,
+                            fontFamily = InstrumentSans,
                             fontWeight = FontWeight.Bold,
                             fontSize = 14.sp,
                             color = if (isPresent) T.green else T.textMuted,
@@ -205,7 +199,7 @@ fun AttendanceScreen(
                     Spacer(Modifier.size(12.dp))
                     Text(
                         name,
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 14.sp,
                         color = T.textPrimary,
                         modifier = Modifier.weight(1f),
@@ -231,7 +225,7 @@ fun AttendanceScreen(
             if (readOnly) {
                 Text(
                     "Vista de solo lectura — el tutor registra la asistencia",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 11.sp,
                     color = T.textMuted,
                     textAlign = TextAlign.Center,
@@ -251,7 +245,7 @@ fun AttendanceScreen(
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
                     } else Text(
                         "Guardar lista",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 15.sp,
                     )
@@ -259,7 +253,7 @@ fun AttendanceScreen(
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "Toca un nombre para marcarlo presente o ausente",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 11.sp,
                     color = T.textMuted,
                     textAlign = TextAlign.Center,
@@ -293,8 +287,8 @@ fun AttendanceScreen(
     pendingDateKey?.let { key ->
         AlertDialog(
             onDismissRequest = { pendingDateKey = null },
-            title = { Text("Modificar otra fecha", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) },
-            text = { Text("Vas a modificar la lista del ${labelFor(key)}.", fontFamily = Outfit) },
+            title = { Text("Modificar otra fecha", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold) },
+            text = { Text("Vas a modificar la lista del ${labelFor(key)}.", fontFamily = InstrumentSans) },
             confirmButton = {
                 TextButton(onClick = { selectDate(key); pendingDateKey = null }) {
                     Text("Continuar", color = T.coral)

@@ -72,6 +72,7 @@ object ApiClient {
     fun certificacionOrganizacion(orgId: Int, archivo: String): String = "${baseUrl}organizaciones/$orgId/certificaciones/$archivo"
     fun imagenOportunidad(oportunidadId: Int): String = "${baseUrl}oportunidades/$oportunidadId/imagen"
     fun imagenNoticia(archivo: String): String = "${baseUrl}noticias/imagen/$archivo"
+    fun fotoPortada(archivo: String): String = "${baseUrl}portada/foto/$archivo"
     fun descargaDocumento(doc: Documento): String = "${baseUrl}repositorio/${doc.seccion}/${doc.id}/descargar"
     fun certificadoPostulacion(postulacionId: Int): String = "${baseUrl}postulaciones/$postulacionId/certificado"
     fun certificadoPersonal(tipo: String): String = "${baseUrl}usuarios/me/certificados/$tipo"

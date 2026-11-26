@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
 fun ResourcesMenuCard(
@@ -47,19 +48,15 @@ fun ResourcesMenuCard(
             .shadow(18.dp, RoundedCornerShape(22.dp))
             .clip(RoundedCornerShape(22.dp))
             .background(T.navBg)
-            .padding(16.dp),
+            .border(1.dp, T.navBorder, RoundedCornerShape(22.dp)),
     ) {
+        BarraBicolor(Modifier.fillMaxWidth(), alto = 5.dp)
+        Column(Modifier.padding(16.dp)) {
+        TituloMarcador("Recursos", resaltado = "Recursos", fontSize = 24.sp)
         Text(
-            "Recursos",
-            fontFamily = SpaceGrotesk,
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = T.textPrimary,
-        )
-        Text(
-            "Elige una sección",
-            fontFamily = Outfit,
-            fontSize = 12.sp,
+            "Material oficial para tu voluntariado",
+            fontFamily = InstrumentSans,
+            fontSize = 13.sp,
             color = T.textMuted,
         )
         Spacer(Modifier.height(14.dp))
@@ -67,14 +64,14 @@ fun ResourcesMenuCard(
             label = "Documentos",
             subtitle = "Reglamentos y formularios",
             icon = Icons.Filled.Description,
-            accent = T.yellow,
+            accent = T.ambar,
             selected = selectedRoute == "documents",
             onClick = { onSelect("documents") },
         )
         Spacer(Modifier.height(8.dp))
         ResourceMenuItem(
             label = "Academia",
-            subtitle = "Cursos para voluntarios",
+            subtitle = "Guías, plantillas y videos",
             icon = Icons.Filled.School,
             accent = T.green,
             selected = selectedRoute == "academy",
@@ -89,6 +86,7 @@ fun ResourcesMenuCard(
             selected = selectedRoute == "library",
             onClick = { onSelect("library") },
         )
+        }
     }
 }
 
@@ -105,8 +103,9 @@ private fun ResourceMenuItem(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(if (selected) accent.copy(alpha = 0.14f) else T.surface1)
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) T.ink else T.surface1)
+            .border(1.dp, if (selected) T.ink else T.border1, RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -114,7 +113,7 @@ private fun ResourceMenuItem(
         Box(
             modifier = Modifier
                 .size(40.dp)
-                .clip(CircleShape)
+                .clip(RoundedCornerShape(10.dp))
                 .background(accent.copy(alpha = 0.18f)),
             contentAlignment = Alignment.Center,
         ) {
@@ -124,16 +123,16 @@ private fun ResourceMenuItem(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 label,
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                color = T.textPrimary,
+                fontSize = 15.sp,
+                color = if (selected) T.onInk else T.textPrimary,
             )
             Text(
                 subtitle,
-                fontFamily = Outfit,
-                fontSize = 11.sp,
-                color = T.textMuted,
+                fontFamily = InstrumentSans,
+                fontSize = 12.sp,
+                color = if (selected) T.onInk.copy(alpha = 0.75f) else T.textMuted,
             )
         }
         Icon(

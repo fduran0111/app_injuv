@@ -6,6 +6,15 @@ import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,8 +58,8 @@ import com.injuv.voluntariado.data.api.Oportunidad
 import com.injuv.voluntariado.data.api.SessionManager
 import com.injuv.voluntariado.ui.theme.AppColors
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.Bricolage
+import com.injuv.voluntariado.ui.theme.InstrumentSans
 
 /** Estado de una carga desde la API. */
 sealed interface Carga<out T> {
@@ -111,69 +120,75 @@ fun Cargando(modifier: Modifier = Modifier, texto: String = "Cargando…") {
             .padding(vertical = 48.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CircularProgressIndicator(color = T.coral, modifier = Modifier.size(32.dp))
+        CircularProgressIndicator(color = if (T.isDark) T.ambar else T.action, strokeWidth = 3.dp, modifier = Modifier.size(30.dp))
         Spacer(Modifier.height(12.dp))
-        Text(texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textMuted)
+        Text(texto, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textMuted)
     }
 }
 
 @Composable
 fun ErrorCarga(mensaje: String, onReintentar: () -> Unit, modifier: Modifier = Modifier) {
     val T = LocalAppColors.current
+    val c = coloresTono(Tono.Rojo, T)
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(c.fondo)
+            .border(1.5.dp, c.anillo, RoundedCornerShape(12.dp))
+            .padding(16.dp),
     ) {
-        Icon(Icons.Filled.CloudOff, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(36.dp))
-        Spacer(Modifier.height(10.dp))
-        Text(mensaje, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(14.dp))
-        Button(
-            onClick = onReintentar,
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = T.action),
-        ) { Text("Reintentar", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold) }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.CloudOff, contentDescription = null, tint = c.texto, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(mensaje, fontFamily = InstrumentSans, fontSize = 14.sp, color = c.texto, modifier = Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(12.dp))
+        BotonContorno("Reintentar", onReintentar, alto = 44.dp, color = c.texto)
     }
 }
 
+/** Estado vacío de la web (EmptyState): caja punteada con ícono en recuadro de tinta. */
 @Composable
-fun Vacio(titulo: String, descripcion: String? = null, modifier: Modifier = Modifier) {
+fun Vacio(titulo: String, descripcion: String? = null, modifier: Modifier = Modifier, icono: ImageVector = Icons.Outlined.Inbox) {
     val T = LocalAppColors.current
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 32.dp, vertical = 40.dp),
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .drawBehind {
+                drawRoundRect(
+                    color = T.border2,
+                    cornerRadius = CornerRadius(14.dp.toPx()),
+                    style = Stroke(width = 1.5.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(7.dp.toPx(), 5.dp.toPx()))),
+                )
+            }
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(Icons.Filled.Inbox, contentDescription = null, tint = T.textSubtle, modifier = Modifier.size(36.dp))
-        Spacer(Modifier.height(10.dp))
-        Text(titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary, textAlign = TextAlign.Center)
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(T.card)
+                .border(1.5.dp, T.textPrimary.copy(alpha = 0.7f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icono, contentDescription = null, tint = T.textPrimary, modifier = Modifier.size(24.dp))
+        }
+        Spacer(Modifier.height(14.dp))
+        Text(titulo, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = T.textPrimary, textAlign = TextAlign.Center)
         if (descripcion != null) {
             Spacer(Modifier.height(4.dp))
-            Text(descripcion, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted, textAlign = TextAlign.Center)
+            Text(descripcion, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textMuted, textAlign = TextAlign.Center)
         }
     }
 }
 
-/** Etiqueta con el estado de una postulación, con el color según la etapa. */
+/** Etiqueta con el estado de una postulación, con el tono de la web según la etapa. */
 @Composable
-fun EstadoPostulacionChip(estado: String, modifier: Modifier = Modifier) {
-    val color = colorEstado(estado, LocalAppColors.current)
-    Text(
-        estado,
-        fontFamily = SpaceGrotesk,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        color = color,
-        modifier = modifier
-            .clip(RoundedCornerShape(50))
-            .background(color.copy(alpha = 0.15f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-    )
-}
+fun EstadoPostulacionChip(estado: String, modifier: Modifier = Modifier) = EtiquetaEstado(estado, modifier)
 
 fun colorEstado(estado: String, T: AppColors): Color = when (estado) {
     "Seleccionado", "Finalizado" -> T.green
@@ -206,13 +221,8 @@ fun descargarArchivo(context: Context, url: String, nombreArchivo: String) {
  * de la organización; y si tampoco, un fondo con el ícono de voluntariado.
  */
 @Composable
-fun OportunidadImagen(oportunidad: Oportunidad, modifier: Modifier = Modifier) {
-    val T = LocalAppColors.current
-    Box(
-        modifier = modifier.background(Brush.linearGradient(listOf(T.coral.copy(alpha = 0.85f), T.coralDark))),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(Icons.Filled.VolunteerActivism, contentDescription = null, tint = Color.White.copy(alpha = 0.9f), modifier = Modifier.size(34.dp))
+fun OportunidadImagen(oportunidad: Oportunidad, modifier: Modifier = Modifier, mostrarArea: Boolean = false) {
+    BloqueArea(oportunidad.tipo_de_voluntariado, modifier = modifier, mostrarNombre = mostrarArea && !oportunidad.tiene_imagen && !oportunidad.organizacion_tiene_logo) {
         if (oportunidad.tiene_imagen) {
             AsyncImage(
                 model = ApiClient.imagenOportunidad(oportunidad.id),
@@ -228,7 +238,7 @@ fun OportunidadImagen(oportunidad: Oportunidad, modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .matchParentSize()
                     .background(Color.White)
-                    .padding(12.dp),
+                    .padding(14.dp),
             )
         }
     }

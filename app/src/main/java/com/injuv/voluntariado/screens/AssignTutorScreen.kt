@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,9 +50,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.data.api.Encargado
 import com.injuv.voluntariado.data.api.Usuario
+import com.injuv.voluntariado.components.SubHeader
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import kotlinx.coroutines.launch
 
 /**
@@ -129,37 +131,16 @@ fun AssignTutorScreen(
             .background(T.bgBase)
             .imePadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Column {
-                Text(
-                    "Designar tutores",
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                    color = Color.White,
-                )
-                Text(
-                    programTitle,
-                    fontFamily = Outfit,
-                    fontSize = 12.sp,
-                    color = Color.White.copy(alpha = 0.85f),
-                )
-            }
-        }
+        SubHeader(
+            titulo = "Designar tutores",
+            onBack = onBack,
+            subtitulo = programTitle,
+        )
 
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
                 "Correo del tutor",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 color = T.textPrimary,
@@ -170,7 +151,7 @@ fun AssignTutorScreen(
                     value = emailQuery,
                     onValueChange = { emailQuery = it; error = null },
                     placeholder = {
-                        Text("tutor@correo.cl", fontFamily = Outfit, fontSize = 13.sp, color = T.textSubtle)
+                        Text("tutor@correo.cl", fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSubtle)
                     },
                     leadingIcon = {
                         Icon(Icons.Filled.Email, contentDescription = null, tint = T.textMuted, modifier = Modifier.size(18.dp))
@@ -205,7 +186,7 @@ fun AssignTutorScreen(
             if (error != null) {
                 Text(
                     error!!,
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 11.sp,
                     color = T.coral,
                     modifier = Modifier.padding(top = 6.dp),
@@ -213,7 +194,7 @@ fun AssignTutorScreen(
             }
             Text(
                 "Si la cuenta no pertenece a la organización queda como tutor externo: conserva sus permisos de voluntario.",
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 11.sp,
                 color = T.textMuted,
                 modifier = Modifier.padding(top = 6.dp),
@@ -221,7 +202,7 @@ fun AssignTutorScreen(
             Spacer(Modifier.height(16.dp))
             Text(
                 if (loading) "Cargando tutores..." else "${assigned.size} tutores designados",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 color = T.coral,
@@ -238,21 +219,22 @@ fun AssignTutorScreen(
                         .fillMaxWidth()
                         .padding(vertical = 6.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(Brush.linearGradient(T.bgCardGradient))
+                        .background(T.card)
+                        .border(1.dp, T.border1, RoundedCornerShape(14.dp))
                         .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             encargado.nombreCompleto,
-                            fontFamily = SpaceGrotesk,
+                            fontFamily = InstrumentSans,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp,
                             color = T.textPrimary,
                         )
                         Text(
                             encargado.email,
-                            fontFamily = Outfit,
+                            fontFamily = InstrumentSans,
                             fontSize = 11.sp,
                             color = T.textMuted,
                         )
@@ -260,7 +242,7 @@ fun AssignTutorScreen(
                     val badgeColor = if (encargado.miembro) T.green else T.coral
                     Text(
                         if (encargado.miembro) "Miembro" else "Externo",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 10.sp,
                         color = badgeColor,
@@ -291,7 +273,7 @@ fun AssignTutorScreen(
             } else {
                 Text(
                     "Guardar designación",
-                    fontFamily = SpaceGrotesk,
+                    fontFamily = InstrumentSans,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 15.sp,
                 )

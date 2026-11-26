@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.components.AppScreenHeader
+import com.injuv.voluntariado.components.TarjetaDocumento
 import com.injuv.voluntariado.components.EstadoCarga
 import com.injuv.voluntariado.components.FilterChipsRow
 import com.injuv.voluntariado.components.Vacio
@@ -36,8 +37,7 @@ import com.injuv.voluntariado.data.api.formatearFecha
 import com.injuv.voluntariado.data.api.formatearTamano
 import com.injuv.voluntariado.data.api.tipoArchivo
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
 
 /** Biblioteca de documentos (GET /biblioteca/documentos), filtrable por temática. */
 @Composable
@@ -60,7 +60,8 @@ fun DocumentsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     ) {
         item {
             AppScreenHeader(
-                title = "Documentos",
+                title = "Documentos oficiales",
+                resaltado = "oficiales",
                 subtitle = "Reglamentos, formularios y guías descargables",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
@@ -77,50 +78,24 @@ fun DocumentsScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
             DocumentCard(
                 doc,
                 onDescargar = { descargarArchivo(context, ApiClient.descargaDocumento(doc), doc.nombre_archivo) },
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
             )
         }
     }
 }
 
+private val CATEGORIAS_ACADEMIA = mapOf(
+    "guias_manuales" to "Guías y manuales",
+    "plantillas_formatos" to "Plantillas y formatos",
+    "videos_tutoriales" to "Videos tutoriales",
+)
+
 @Composable
 internal fun DocumentCard(doc: Documento, onDescargar: () -> Unit, modifier: Modifier = Modifier) {
-    val T = LocalAppColors.current
-    val tipo = tipoArchivo(doc.archivo_mime, doc.nombre_archivo)
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
-            .padding(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(T.blue.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Description, contentDescription = tipo, tint = T.blue)
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(doc.nombre_archivo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary, maxLines = 2)
-            if (doc.descripcion.isNotBlank()) {
-                Text(doc.descripcion, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted, maxLines = 2)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                listOf(tipo, formatearTamano(doc.archivo_tamano_bytes), formatearFecha(doc.fecha_edicion ?: doc.created_at, ""))
-                    .filter { it.isNotBlank() }.joinToString(" · "),
-                fontFamily = Outfit,
-                fontSize = 11.sp,
-                color = T.textSubtle,
-            )
-        }
-        IconButton(onClick = onDescargar) {
-            Icon(Icons.Filled.Download, contentDescription = "Descargar", tint = T.coral)
-        }
+    val etiqueta = if (doc.seccion == "academia") {
+        doc.categoria?.let { CATEGORIAS_ACADEMIA[it] ?: it.replaceFirstChar { c -> c.uppercase() } }
+    } else {
+        doc.tematica_nombre
     }
+    TarjetaDocumento(doc, onDescargar = onDescargar, modifier = modifier, etiqueta = etiqueta)
 }

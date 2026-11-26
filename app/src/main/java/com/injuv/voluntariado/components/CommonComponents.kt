@@ -25,7 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.filled.Article
@@ -49,40 +49,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
-fun MenuIconButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Menu, contentDescription = "Recursos", tint = Color.White)
-        }
-    }
-}
+fun MenuIconButton(onClick: () -> Unit, modifier: Modifier = Modifier) =
+    BotonCirculo(Icons.Filled.Menu, "Recursos", onClick, modifier)
 
 @Composable
-fun NotificationIconButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    IconButton(onClick = onClick, modifier = modifier) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Notifications, contentDescription = "Alertas", tint = Color.White)
-        }
-    }
-}
+fun NotificationIconButton(onClick: () -> Unit, modifier: Modifier = Modifier) =
+    BotonCirculo(Icons.Outlined.Notifications, "Alertas", onClick, modifier)
 
-/** Encabezado unificado: título, subtítulo y botón de notificaciones alineado en todas las pantallas principales. */
+/**
+ * Encabezado de las pantallas principales: menú, logotipo INJUV y alertas arriba; debajo el
+ * título grande con su palabra clave marcada en ámbar (como los titulares de la web).
+ */
 @Composable
 fun AppScreenHeader(
     title: String,
@@ -90,100 +71,53 @@ fun AppScreenHeader(
     modifier: Modifier = Modifier,
     onNotificationClick: (() -> Unit)? = null,
     onMenuClick: (() -> Unit)? = null,
+    resaltado: String? = palabraClave(title),
     bottomContent: @Composable (() -> Unit)? = null,
 ) {
-    Box(
+    val T = LocalAppColors.current
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(Brush.linearGradient(LocalAppColors.current.bgHeaderGradient))
-            .padding(horizontal = 12.dp, vertical = 16.dp),
+            .background(T.bgBase)
+            .padding(top = 6.dp, bottom = 8.dp),
     ) {
-        Column {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                if (onMenuClick != null) {
-                    MenuIconButton(onClick = onMenuClick)
-                }
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = if (onMenuClick != null) 4.dp else 8.dp, end = 12.dp, top = 4.dp),
-                ) {
-                    Text(
-                        text = title,
-                        fontFamily = SpaceGrotesk,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp,
-                        color = Color.White,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = subtitle,
-                        fontFamily = Outfit,
-                        fontSize = 13.sp,
-                        color = Color.White.copy(alpha = 0.85f),
-                    )
-                }
-                if (onNotificationClick != null) {
-                    NotificationIconButton(onClick = onNotificationClick)
-                }
-            }
-            if (bottomContent != null) {
-                Spacer(Modifier.height(16.dp))
-                bottomContent()
-            }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (onMenuClick != null) MenuIconButton(onClick = onMenuClick) else Spacer(Modifier.size(48.dp))
+            LogoInjuv(Modifier.height(26.dp))
+            if (onNotificationClick != null) NotificationIconButton(onClick = onNotificationClick) else Spacer(Modifier.size(48.dp))
+        }
+        Column(modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 14.dp)) {
+            TituloMarcador(title, resaltado = resaltado, fontSize = 31.sp)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = subtitle,
+                fontFamily = InstrumentSans,
+                fontSize = 14.sp,
+                color = T.textMuted,
+            )
+        }
+        if (bottomContent != null) {
+            Spacer(Modifier.height(10.dp))
+            Box(Modifier.padding(horizontal = 20.dp)) { bottomContent() }
         }
     }
 }
 
-/** Fila de chips horizontales con scroll, usada en Postulaciones, Noticias, Documentos, Academia y Biblioteca. */
+/** Fila de fichas de filtro con scroll, usada en Postulaciones, Noticias, Documentos, Academia y Biblioteca. */
 @Composable
 fun FilterChipsRow(
     options: List<String>,
     selected: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
-) {
-    val T = LocalAppColors.current
-    Row(
-        modifier = modifier.horizontalScroll(rememberScrollState()),
-    ) {
-        options.forEachIndexed { index, option ->
-            val isActive = option == selected
-            Box(
-                modifier = Modifier
-                    .padding(start = if (index == 0) 0.dp else 8.dp)
-                    .heightIn(min = 48.dp)
-                    .clip(RoundedCornerShape(50))
-                    .then(
-                        if (isActive) {
-                            Modifier.background(
-                                Brush.linearGradient(listOf(T.action, T.actionDark))
-                            )
-                        } else {
-                            Modifier
-                                .background(Color.White.copy(alpha = 0.12f))
-                                .border(1.dp, Color.White.copy(alpha = 0.18f), RoundedCornerShape(50))
-                        }
-                    )
-                    .selectable(selected = isActive, role = Role.Button, onClick = { onSelect(option) })
-                    .padding(horizontal = 16.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = option,
-                    fontFamily = SpaceGrotesk,
-                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
-                    fontSize = 12.sp,
-                    color = if (isActive) Color.White else Color.White.copy(alpha = 0.7f),
-                )
-            }
-        }
-    }
-}
+    counts: Map<String, Int> = emptyMap(),
+) = FilaFichas(options, selected, onSelect, modifier, counts)
 
 /** Ítems de la barra de navegación inferior (coinciden con BottomNav.tsx). */
 enum class BottomNavItem(val route: String, val label: String) {
@@ -197,7 +131,7 @@ enum class BottomNavItem(val route: String, val label: String) {
 }
 
 @Composable
-fun bottomNavIcon(item: BottomNavItem, active: Boolean) {
+fun bottomNavIcon(item: BottomNavItem, active: Boolean, tint: Color = Color.Unspecified) {
     val icon = when (item) {
         BottomNavItem.Home -> if (active) Icons.Filled.Home else Icons.Outlined.Home
         BottomNavItem.Applications -> if (active) Icons.Filled.Assignment else Icons.Outlined.Assignment
@@ -207,5 +141,5 @@ fun bottomNavIcon(item: BottomNavItem, active: Boolean) {
         BottomNavItem.Org -> if (active) Icons.Filled.Business else Icons.Outlined.Business
         BottomNavItem.Profile -> if (active) Icons.Filled.Person else Icons.Outlined.Person
     }
-    Icon(imageVector = icon, contentDescription = item.label)
+    Icon(imageVector = icon, contentDescription = item.label, tint = tint)
 }

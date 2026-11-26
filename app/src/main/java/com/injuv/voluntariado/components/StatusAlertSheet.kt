@@ -34,8 +34,8 @@ import androidx.compose.ui.unit.sp
 import com.injuv.voluntariado.data.api.Notificacion
 import com.injuv.voluntariado.data.api.PostulacionUsuario
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 /**
  * Aviso emergente: notificaciones nuevas del servidor (las mismas de la campana web); si no hay,
@@ -80,7 +80,7 @@ fun StatusAlertSheet(
             ) {
                 Text(
                     text = if (hayNovedad) "Novedades" else "Tus postulaciones",
-                    fontFamily = SpaceGrotesk,
+                    fontFamily = Bricolage,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp,
                     color = T.textPrimary,
@@ -93,7 +93,7 @@ fun StatusAlertSheet(
             if (!hayNovedad) {
                 Text(
                     if (lista.isNotEmpty()) "Así van tus postulaciones activas:" else "No hay novedades desde tu última revisión.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 13.sp,
                     color = T.textMuted,
                 )
@@ -103,7 +103,7 @@ fun StatusAlertSheet(
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "Por calificar",
-                    fontFamily = SpaceGrotesk,
+                    fontFamily = InstrumentSans,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp,
                     color = T.textMuted,
@@ -125,10 +125,10 @@ fun StatusAlertSheet(
                         }
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Tu voluntariado terminó", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                            Text("${p.oportunidad_titulo} · ${p.organizacion_nombre}", fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                            Text("Tu voluntariado terminó", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                            Text("${p.oportunidad_titulo} · ${p.organizacion_nombre}", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                             Spacer(Modifier.height(4.dp))
-                            Text("Calificar a la organización ›", fontFamily = Outfit, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = T.coral)
+                            Text("Calificar a la organización ›", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = T.coral)
                         }
                     }
                 }
@@ -153,10 +153,10 @@ fun StatusAlertSheet(
                         }
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(n.titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                            Text(n.titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
                             if (!n.texto.isNullOrBlank()) {
                                 Spacer(Modifier.height(2.dp))
-                                Text(n.texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary, maxLines = 2)
+                                Text(n.texto, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary, maxLines = 2)
                             }
                         }
                     }
@@ -166,7 +166,7 @@ fun StatusAlertSheet(
 
             if (!hayNovedad && lista.isEmpty() && mostrarResumen) {
                 Spacer(Modifier.height(12.dp))
-                Text("Aún no tienes postulaciones activas.", fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                Text("Aún no tienes postulaciones activas.", fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
             }
 
             lista.forEach { p ->
@@ -184,8 +184,8 @@ fun StatusAlertSheet(
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(p.oportunidad_titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
-                        Text(p.organizacion_nombre, fontFamily = Outfit, fontSize = 12.sp, color = T.textMuted)
+                        Text(p.oportunidad_titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = T.textPrimary)
+                        Text(p.organizacion_nombre, fontFamily = InstrumentSans, fontSize = 12.sp, color = T.textMuted)
                         Spacer(Modifier.height(4.dp))
                         EstadoPostulacionChip(p.estado)
                     }

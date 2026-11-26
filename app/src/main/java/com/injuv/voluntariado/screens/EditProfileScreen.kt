@@ -84,9 +84,10 @@ import com.injuv.voluntariado.data.ChileLocations
 import com.injuv.voluntariado.data.PrivacySettings
 import com.injuv.voluntariado.data.Skill
 import com.injuv.voluntariado.data.UserProfile
+import com.injuv.voluntariado.components.SubHeader
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 import com.injuv.voluntariado.ui.theme.bannerPresets
 import kotlin.math.roundToInt
 
@@ -133,24 +134,10 @@ fun EditProfileScreen(
             .background(T.bgBase)
             .imePadding(),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(T.bgHeaderGradient))
-                .padding(horizontal = 8.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = Color.White)
-            }
-            Text(
-                "Editar perfil",
-                fontFamily = SpaceGrotesk,
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = Color.White,
-            )
-        }
+        SubHeader(
+            titulo = "Editar perfil",
+            onBack = onBack,
+        )
 
         Row(
             modifier = Modifier
@@ -166,7 +153,7 @@ fun EditProfileScreen(
                         .clip(RoundedCornerShape(50))
                         .then(
                             if (isActive) {
-                                Modifier.background(Brush.linearGradient(listOf(T.action, T.actionDark)))
+                                Modifier.background(androidx.compose.ui.graphics.SolidColor(T.action))
                             } else {
                                 Modifier
                                     .background(T.surface1)
@@ -186,7 +173,7 @@ fun EditProfileScreen(
                     Spacer(Modifier.width(6.dp))
                     Text(
                         item.label,
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
                         fontSize = 12.sp,
                         color = if (isActive) Color.White else T.textMuted,
@@ -244,7 +231,7 @@ fun EditProfileScreen(
                     .height(48.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text("Cancelar", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("Cancelar", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
             Button(
                 onClick = { onSave(draft) },
@@ -254,7 +241,7 @@ fun EditProfileScreen(
                 shape = RoundedCornerShape(14.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = T.action, contentColor = Color.White),
             ) {
-                Text("Guardar", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                Text("Guardar", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
             }
         }
     }
@@ -274,8 +261,8 @@ private fun SectionBody(
             .padding(horizontal = 20.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = T.textPrimary)
-        Text(description, fontFamily = Outfit, fontSize = 13.sp, color = T.textMuted)
+        Text(title, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = T.textPrimary)
+        Text(description, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textMuted)
         content()
         Spacer(Modifier.height(8.dp))
     }
@@ -312,14 +299,14 @@ private fun PhotoSection(photoUri: String?, onPick: () -> Unit, onRemove: () -> 
                     Spacer(Modifier.height(10.dp))
                     Text(
                         "Toca para seleccionar una imagen",
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 13.sp,
                         color = T.blue,
                     )
                     Text(
                         "PNG, JPG hasta 10MB",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
@@ -337,7 +324,7 @@ private fun PhotoSection(photoUri: String?, onPick: () -> Unit, onRemove: () -> 
                     Spacer(Modifier.height(10.dp))
                     Text(
                         "Toca para cambiar la imagen",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
@@ -347,7 +334,7 @@ private fun PhotoSection(photoUri: String?, onPick: () -> Unit, onRemove: () -> 
         if (photoUri != null) {
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 TextButton(onClick = onRemove) {
-                    Text("Quitar foto", fontFamily = SpaceGrotesk, fontSize = 13.sp, color = T.coral)
+                    Text("Quitar foto", fontFamily = InstrumentSans, fontSize = 13.sp, color = T.coral)
                 }
             }
         }
@@ -391,7 +378,7 @@ private fun BannerSection(selected: Int, onSelect: (Int) -> Unit) {
                     } else if (index == 0) {
                         Text(
                             "Auto",
-                            fontFamily = SpaceGrotesk,
+                            fontFamily = InstrumentSans,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.85f),
@@ -520,7 +507,7 @@ private fun LocationDropdown(
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option, fontFamily = Outfit, fontSize = 14.sp) },
+                    text = { Text(option, fontFamily = InstrumentSans, fontSize = 14.sp) },
                     onClick = {
                         onSelect(option)
                         expanded = false
@@ -573,7 +560,7 @@ private fun SkillsSection(skills: List<Skill>, onChange: (List<Skill>) -> Unit) 
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(6.dp))
-                Text("Agregar habilidad", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                Text("Agregar habilidad", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             }
         }
         skills.forEachIndexed { index, skill ->
@@ -587,7 +574,7 @@ private fun SkillsSection(skills: List<Skill>, onChange: (List<Skill>) -> Unit) 
         if (skills.isEmpty()) {
             Text(
                 "Aún no has agregado habilidades.",
-                fontFamily = Outfit,
+                fontFamily = InstrumentSans,
                 fontSize = 13.sp,
                 color = T.textMuted,
             )
@@ -607,7 +594,8 @@ private fun SkillCard(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(14.dp),
     ) {
@@ -621,13 +609,13 @@ private fun SkillCard(
                 modifier = Modifier.weight(1f),
             )
             TextButton(onClick = onDelete) {
-                Text("Eliminar", fontFamily = SpaceGrotesk, fontSize = 12.sp, color = T.coral)
+                Text("Eliminar", fontFamily = InstrumentSans, fontSize = 12.sp, color = T.coral)
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Nivel", fontFamily = Outfit, fontSize = 13.sp, color = T.textMuted)
-            Text("${skill.level}%", fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.blue)
+            Text("Nivel", fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textMuted)
+            Text("${skill.level}%", fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.blue)
         }
         Slider(
             value = skill.level.toFloat(),
@@ -722,13 +710,14 @@ private fun PrivacyGroup(title: String, content: @Composable () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
     ) {
         Text(
             title,
-            fontFamily = SpaceGrotesk,
+            fontFamily = InstrumentSans,
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp,
             color = T.textPrimary,
@@ -753,8 +742,8 @@ private fun PrivacyToggle(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary)
-            Text(subtitle, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+            Text(title, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary)
+            Text(subtitle, fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textMuted)
         }
         Spacer(Modifier.width(12.dp))
         Switch(

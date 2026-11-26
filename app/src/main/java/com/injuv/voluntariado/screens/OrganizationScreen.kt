@@ -1,6 +1,7 @@
 package com.injuv.voluntariado.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,9 +45,13 @@ import com.injuv.voluntariado.components.NotificationIconButton
 import com.injuv.voluntariado.data.OrgProfile
 import com.injuv.voluntariado.data.api.Encargado
 import com.injuv.voluntariado.data.api.Oportunidad
+import com.injuv.voluntariado.components.CabeceraPerfil
+import com.injuv.voluntariado.components.Avatar
+import com.injuv.voluntariado.components.Tono
+import com.injuv.voluntariado.components.DatoPerfil
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 @Composable
 fun OrganizationScreen(
@@ -75,71 +80,22 @@ fun OrganizationScreen(
         contentPadding = PaddingValues(bottom = 24.dp),
     ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Brush.linearGradient(T.bgHeaderGradient))
-                    .padding(horizontal = 12.dp, vertical = 16.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    MenuIconButton(onClick = onToggleMenu)
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(76.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.15f)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(
-                                displayName.first().uppercase(),
-                                fontFamily = SpaceGrotesk,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 28.sp,
-                                color = Color.White,
-                            )
-                        }
-                        Spacer(Modifier.height(10.dp))
-                        Text(displayName, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.White)
-                        Text(if (canManage) "Super tutor · administrador" else "Tutor · integrante", fontFamily = Outfit, fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-                        Spacer(Modifier.height(18.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            OrgStat("${oportunidades.size}", "Programas")
-                            OrgStat("${oportunidades.sumOf { it.num_postulaciones }}", "Postulantes")
-                            OrgStat("$memberCount", "Integrantes")
-                        }
-                        if (canManage) {
-                        Spacer(Modifier.height(14.dp))
-                        Row(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(Color.White.copy(alpha = 0.18f))
-                                .clickable(onClick = onEdit)
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(Icons.Filled.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(13.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                "Editar organización",
-                                fontFamily = SpaceGrotesk,
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp,
-                                color = Color.White,
-                            )
-                        }
-                        }
-                    }
-                    NotificationIconButton(onClick = onShowAlert)
-                }
-            }
+            CabeceraPerfil(
+                nombre = displayName,
+                onMenu = onToggleMenu,
+                onAlertas = onShowAlert,
+                avatar = { Avatar(displayName, size = 70.dp) },
+                rol = if (canManage) "Super tutor · administrador" else "Tutor · integrante",
+                tonoRol = if (canManage) Tono.Ambar else Tono.Azul,
+                datos = listOf(
+                    DatoPerfil("${oportunidades.size}", "Programas"),
+                    DatoPerfil("${oportunidades.sumOf { it.num_postulaciones }}", "Postulantes"),
+                    DatoPerfil("$memberCount", "Integrantes"),
+                ),
+                accion = if (canManage) "Editar organización" else null,
+                iconoAccion = Icons.Filled.Edit,
+                onAccion = if (canManage) onEdit else null,
+            )
         }
 
         if (org.email.isNotBlank() || org.phone.isNotBlank() || org.website.isNotBlank()) {
@@ -155,7 +111,7 @@ fun OrganizationScreen(
         if (org.about.isNotBlank()) {
             item {
                 OrgInfoCard("Acerca de la organización") {
-                    Text(org.about, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+                    Text(org.about, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
                 }
             }
         }
@@ -163,7 +119,7 @@ fun OrganizationScreen(
         item {
             Text(
                 if (canManage) "Oportunidades publicadas" else "Tus voluntariados como tutor",
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 color = T.textMuted,
@@ -175,7 +131,7 @@ fun OrganizationScreen(
             item {
                 Text(
                     loadError ?: if (canManage) "Tu organización aún no publica voluntariados." else "Aún no te asignan voluntariados.",
-                    fontFamily = Outfit,
+                    fontFamily = InstrumentSans,
                     fontSize = 12.sp,
                     color = if (loadError != null) T.coral else T.textSubtle,
                     modifier = Modifier.padding(horizontal = 20.dp),
@@ -190,7 +146,8 @@ fun OrganizationScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 6.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(T.bgCardGradient))
+                    .background(T.card)
+                    .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                     .clickable(enabled = canManage) { onAssignTutor(opportunity.id) }
                     .padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -198,14 +155,14 @@ fun OrganizationScreen(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         opportunity.titulo,
-                        fontFamily = SpaceGrotesk,
+                        fontFamily = InstrumentSans,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp,
                         color = T.textPrimary,
                     )
                     Text(
                         "${opportunity.horas_voluntariado ?: 0}h · ${opportunity.cupo_maximo?.let { "$it cupos" } ?: "Sin límite de cupos"}",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 12.sp,
                         color = T.textMuted,
                     )
@@ -213,7 +170,7 @@ fun OrganizationScreen(
                     Text(
                         if (assigned.isEmpty()) (if (canManage) "Sin tutor designado — toca para asignar" else "Sin tutor designado")
                         else "Tutores: ${assigned.joinToString(", ") { it.nombreCompleto }}",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 11.sp,
                         color = if (assigned.isEmpty()) T.textSubtle else T.green,
                     )
@@ -232,8 +189,8 @@ fun OrganizationScreen(
 @Composable
 private fun OrgStat(value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFFFFD60A))
-        Text(label, fontFamily = Outfit, fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
+        Text(value, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = Color(0xFFFFD60A))
+        Text(label, fontFamily = InstrumentSans, fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
     }
 }
 
@@ -245,11 +202,12 @@ private fun OrgInfoCard(title: String, content: @Composable () -> Unit) {
             .fillMaxWidth()
             .padding(horizontal = 20.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(title, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary)
+        Text(title, fontFamily = InstrumentSans, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = T.textPrimary)
         content()
     }
 }
@@ -260,6 +218,6 @@ private fun OrgContactRow(icon: ImageVector, value: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(10.dp))
-        Text(value, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+        Text(value, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
     }
 }

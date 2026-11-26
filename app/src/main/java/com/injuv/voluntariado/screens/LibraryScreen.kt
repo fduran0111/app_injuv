@@ -24,6 +24,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.injuv.voluntariado.components.tonoArea
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -42,8 +49,8 @@ import com.injuv.voluntariado.data.api.Documento
 import com.injuv.voluntariado.data.api.anioDe
 import com.injuv.voluntariado.data.api.tipoArchivo
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.Bricolage
+import com.injuv.voluntariado.ui.theme.InstrumentSans
 
 private const val PREFS = "injuv_prefs"
 private const val KEY_GUARDADOS = "biblioteca_guardados"
@@ -79,13 +86,14 @@ fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(T.bgBase),
-        contentPadding = PaddingValues(bottom = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(span = { GridItemSpan(2) }) {
             AppScreenHeader(
-                title = "Biblioteca",
+                title = "Biblioteca abierta",
+                resaltado = "Biblioteca",
                 subtitle = "Lecturas y materiales sobre voluntariado",
                 onNotificationClick = onShowAlert,
                 onMenuClick = onToggleMenu,
@@ -94,6 +102,7 @@ fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
                         options = categorias,
                         selected = selectedCategory,
                         onSelect = { selectedCategory = it },
+                        counts = mapOf("Todos" to docs.size, "Guardados" to guardados.size),
                     )
                 },
             )
@@ -118,6 +127,7 @@ fun LibraryScreen(onShowAlert: () -> Unit, onToggleMenu: () -> Unit) {
     }
 }
 
+/** Portada de libro: bloque de color de la temática, ícono como marca de agua y título impreso. */
 @Composable
 private fun BookCard(
     doc: Documento,
@@ -127,48 +137,93 @@ private fun BookCard(
     modifier: Modifier = Modifier,
 ) {
     val T = LocalAppColors.current
+    val (fondo, texto, marca) = tonoArea(doc.tematica_nombre.orEmpty(), T)
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
-            .clickable(onClick = onAbrir)
-            .padding(10.dp),
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(role = Role.Button, onClick = onAbrir),
     ) {
-        Box {
-            // Portada: los documentos no traen imagen, se usa una portada con el tipo de archivo.
-            Box(
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(3f / 4f)
+                .shadow(8.dp, RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 12.dp, bottomEnd = 12.dp), ambientColor = Color(0x330F1B2D), spotColor = Color(0x660F1B2D))
+                .clip(RoundedCornerShape(topStart = 4.dp, bottomStart = 4.dp, topEnd = 12.dp, bottomEnd = 12.dp))
+                .background(fondo),
+        ) {
+            // Lomo del libro
+            Box(Modifier.width(8.dp).fillMaxHeight().background(Color.Black.copy(alpha = 0.18f)))
+            Icon(
+                Icons.Filled.MenuBook,
+                contentDescription = null,
+                tint = marca,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(140.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Brush.linearGradient(listOf(T.blue.copy(alpha = 0.55f), T.coral.copy(alpha = 0.55f)))),
-                contentAlignment = Alignment.Center,
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 18.dp, y = 18.dp)
+                    .size(110.dp)
+                    .rotate(-12f),
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 18.dp, end = 12.dp, top = 14.dp, bottom = 14.dp),
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(Icons.Filled.MenuBook, contentDescription = null, tint = Color.White, modifier = Modifier.size(34.dp))
-                    Spacer(Modifier.height(6.dp))
-                    Text(tipoArchivo(doc.archivo_mime, doc.nombre_archivo), fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, color = Color.White)
-                }
+                Text(
+                    tipoArchivo(doc.archivo_mime, doc.nombre_archivo),
+                    fontFamily = InstrumentSans,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.08.em,
+                    color = texto.copy(alpha = 0.8f),
+                )
+                Spacer(Modifier.weight(1f))
+                Text(
+                    doc.nombre_archivo.substringBeforeLast('.'),
+                    fontFamily = Bricolage,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    lineHeight = 18.sp,
+                    color = texto,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             IconButton(
                 onClick = onGuardar,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.35f))
-                    .size(30.dp),
+                modifier = Modifier.align(Alignment.TopEnd),
             ) {
-                Icon(
-                    if (guardado) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
-                    contentDescription = if (guardado) "Quitar de guardados" else "Guardar",
-                    tint = if (guardado) T.yellow else Color.White,
-                )
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFFF4EFE6).copy(alpha = 0.92f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (guardado) Icons.Filled.Bookmark else Icons.Filled.BookmarkBorder,
+                        contentDescription = if (guardado) "Quitar de guardados" else "Guardar",
+                        tint = if (guardado) Color(0xFFC81E25) else Color(0xFF0F1B2D),
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text(doc.nombre_archivo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, color = T.textPrimary, maxLines = 2)
-        Text(doc.autor.ifBlank { doc.tematica_nombre ?: "INJUV" }, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted, maxLines = 1)
-        Spacer(Modifier.height(4.dp))
-        Text(anioDe(doc.fecha_edicion ?: doc.created_at), fontFamily = Outfit, fontSize = 10.sp, color = T.textSubtle)
+        Text(
+            doc.autor.ifBlank { doc.tematica_nombre ?: "INJUV" },
+            fontFamily = InstrumentSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            color = T.textPrimary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            listOfNotNull(doc.tematica_nombre, anioDe(doc.fecha_edicion ?: doc.created_at).ifBlank { null }).joinToString(" · "),
+            fontFamily = InstrumentSans,
+            fontSize = 12.sp,
+            color = T.textMuted,
+            maxLines = 1,
+        )
     }
 }

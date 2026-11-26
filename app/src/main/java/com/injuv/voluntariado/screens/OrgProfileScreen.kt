@@ -3,6 +3,7 @@ package com.injuv.voluntariado.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,9 +60,10 @@ import com.injuv.voluntariado.components.rememberCarga
 import com.injuv.voluntariado.data.api.ApiClient
 import com.injuv.voluntariado.data.api.ResenaOrganizacion
 import com.injuv.voluntariado.data.api.formatearFecha
+import com.injuv.voluntariado.components.TituloSeccion
 import com.injuv.voluntariado.ui.theme.LocalAppColors
-import com.injuv.voluntariado.ui.theme.Outfit
-import com.injuv.voluntariado.ui.theme.SpaceGrotesk
+import com.injuv.voluntariado.ui.theme.InstrumentSans
+import com.injuv.voluntariado.ui.theme.Bricolage
 
 /**
  * Perfil público de una organización (GET /organizaciones/{id}): banner, logo, datos,
@@ -152,7 +154,7 @@ fun OrgProfileScreen(
                     } else {
                         Text(
                             org.nombre.split(" ").mapNotNull { it.firstOrNull() }.take(2).joinToString("").uppercase(),
-                            fontFamily = SpaceGrotesk,
+                            fontFamily = Bricolage,
                             fontWeight = FontWeight.Bold,
                             fontSize = 26.sp,
                             color = T.coral,
@@ -161,9 +163,9 @@ fun OrgProfileScreen(
                 }
 
                 Spacer(Modifier.height(10.dp))
-                Text(org.nombre, fontFamily = SpaceGrotesk, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = T.textPrimary)
+                Text(org.nombre, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = T.textPrimary)
                 if (org.siglas_nombre.isNotBlank()) {
-                    Text(org.siglas_nombre, fontFamily = Outfit, fontSize = 13.sp, color = T.textMuted)
+                    Text(org.siglas_nombre, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textMuted)
                 }
 
                 val ubicacion = listOf(org.comuna, org.region)
@@ -183,7 +185,7 @@ fun OrgProfileScreen(
                         Spacer(Modifier.width(4.dp))
                         Text(
                             ubicacion,
-                            fontFamily = Outfit,
+                            fontFamily = InstrumentSans,
                             fontSize = 12.sp,
                             color = T.textSecondary,
                             maxLines = 2,
@@ -205,7 +207,7 @@ fun OrgProfileScreen(
                         tags.forEach { tag ->
                             Text(
                                 tag,
-                                fontFamily = SpaceGrotesk,
+                                fontFamily = InstrumentSans,
                                 fontWeight = FontWeight.Medium,
                                 fontSize = 11.sp,
                                 color = T.coral,
@@ -227,7 +229,8 @@ fun OrgProfileScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(Brush.linearGradient(T.bgCardGradient))
+                        .background(T.card)
+                        .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
@@ -242,7 +245,7 @@ fun OrgProfileScreen(
                     Spacer(Modifier.height(6.dp))
                     Text(
                         org.descripcion.ifBlank { org.descripcion_breve },
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 13.sp,
                         lineHeight = 20.sp,
                         color = T.textSecondary,
@@ -260,7 +263,8 @@ fun OrgProfileScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(16.dp))
-                            .background(Brush.linearGradient(T.bgCardGradient))
+                            .background(T.card)
+                            .border(1.dp, T.border1, RoundedCornerShape(16.dp))
                             .padding(horizontal = 16.dp, vertical = 6.dp),
                     ) {
                         if (org.email_contacto.isNotBlank()) {
@@ -299,7 +303,8 @@ fun OrgProfileScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Brush.linearGradient(T.bgCardGradient))
+                                .background(T.card)
+                                .border(1.dp, T.border1, RoundedCornerShape(14.dp))
                                 .clickable {
                                     descargarArchivo(context, ApiClient.certificacionOrganizacion(org.id, cert.archivo), cert.nombre.ifBlank { cert.archivo })
                                 }
@@ -308,7 +313,7 @@ fun OrgProfileScreen(
                         ) {
                             Icon(Icons.Filled.Verified, contentDescription = null, tint = T.green, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
-                            Text(cert.nombre.ifBlank { cert.archivo }, fontFamily = Outfit, fontSize = 13.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
+                            Text(cert.nombre.ifBlank { cert.archivo }, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textPrimary, modifier = Modifier.weight(1f))
                             Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = T.textSubtle)
                         }
                     }
@@ -325,7 +330,8 @@ fun OrgProfileScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .background(Brush.linearGradient(T.bgCardGradient))
+                                .background(T.card)
+                                .border(1.dp, T.border1, RoundedCornerShape(14.dp))
                                 .clickable { onOpenOportunidad(op.id) }
                                 .padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -333,11 +339,11 @@ fun OrgProfileScreen(
                             Icon(Icons.Filled.Work, contentDescription = null, tint = T.coral, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.width(10.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(op.titulo, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary)
+                                Text(op.titulo, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary)
                                 if (op.comuna.isNotBlank() || op.region.isNotBlank()) {
                                     Text(
                                         listOf(op.comuna, op.region).filter { it.isNotBlank() }.joinToString(", "),
-                                        fontFamily = Outfit,
+                                        fontFamily = InstrumentSans,
                                         fontSize = 11.sp,
                                         color = T.textMuted,
                                     )
@@ -355,7 +361,7 @@ fun OrgProfileScreen(
                 if (resenas.isEmpty()) {
                     Text(
                         "Aún no hay reseñas públicas de voluntarios.",
-                        fontFamily = Outfit,
+                        fontFamily = InstrumentSans,
                         fontSize = 13.sp,
                         color = T.textMuted,
                     )
@@ -374,15 +380,15 @@ private fun OrgStat(icon: ImageVector, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(20.dp))
         Spacer(Modifier.height(4.dp))
-        Text(value, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary, maxLines = 1)
-        Text(label, fontFamily = Outfit, fontSize = 10.sp, color = T.textMuted)
+        Text(value, fontFamily = InstrumentSans, fontWeight = FontWeight.SemiBold, fontSize = 13.sp, color = T.textPrimary, maxLines = 1)
+        Text(label, fontFamily = InstrumentSans, fontSize = 10.sp, color = T.textMuted)
     }
 }
 
 @Composable
 private fun SeccionOrg(texto: String) {
     val T = LocalAppColors.current
-    Text(texto, fontFamily = SpaceGrotesk, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = T.textPrimary)
+    TituloSeccion(texto)
 }
 
 @Composable
@@ -397,7 +403,7 @@ private fun ContactoFila(icon: ImageVector, texto: String, onClick: () -> Unit) 
     ) {
         Icon(icon, contentDescription = null, tint = T.coral, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(10.dp))
-        Text(texto, fontFamily = Outfit, fontSize = 13.sp, color = T.textSecondary)
+        Text(texto, fontFamily = InstrumentSans, fontSize = 13.sp, color = T.textSecondary)
     }
 }
 
@@ -409,13 +415,14 @@ private fun ResenaOrgCard(r: ResenaOrganizacion) {
             .fillMaxWidth()
             .padding(bottom = 10.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Brush.linearGradient(T.bgCardGradient))
+            .background(T.card)
+            .border(1.dp, T.border1, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 r.usuario_nombre.ifBlank { "Voluntario" },
-                fontFamily = SpaceGrotesk,
+                fontFamily = InstrumentSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 color = T.textPrimary,
@@ -439,16 +446,16 @@ private fun ResenaOrgCard(r: ResenaOrganizacion) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.LocationOn, contentDescription = null, tint = T.textSubtle, modifier = Modifier.size(11.dp))
                 Spacer(Modifier.width(4.dp))
-                Text(r.oportunidad_titulo, fontFamily = Outfit, fontSize = 11.sp, color = T.textMuted)
+                Text(r.oportunidad_titulo, fontFamily = InstrumentSans, fontSize = 11.sp, color = T.textMuted)
             }
         }
         if (r.resena.isNotBlank()) {
             Spacer(Modifier.height(6.dp))
-            Text(r.resena, fontFamily = Outfit, fontSize = 13.sp, lineHeight = 18.sp, color = T.textSecondary)
+            Text(r.resena, fontFamily = InstrumentSans, fontSize = 13.sp, lineHeight = 18.sp, color = T.textSecondary)
         }
         r.fecha?.takeIf { it.isNotBlank() }?.let {
             Spacer(Modifier.height(6.dp))
-            Text(formatearFecha(it), fontFamily = Outfit, fontSize = 10.sp, color = T.textSubtle)
+            Text(formatearFecha(it), fontFamily = InstrumentSans, fontSize = 10.sp, color = T.textSubtle)
         }
     }
 }
