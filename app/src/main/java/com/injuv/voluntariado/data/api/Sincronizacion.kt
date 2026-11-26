@@ -71,6 +71,8 @@ suspend fun guardarPerfil(context: Context, usuario: Usuario, antes: UserProfile
                 comuna = despues.commune.trim().ifBlank { null },
                 sexo = usuario.sexo.ifBlank { null },
                 fecha_nacimiento = usuario.fecha_nacimiento,
+                acerca_de = despues.about.trim().ifBlank { null },
+                habilidades = despues.skills.map { HabilidadItem(it.name.trim().take(60), it.level.coerceIn(0, 100)) },
             ),
         )
     }

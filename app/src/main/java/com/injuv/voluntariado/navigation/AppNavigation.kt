@@ -90,6 +90,7 @@ import com.injuv.voluntariado.data.ForumChannel
 import com.injuv.voluntariado.data.Opportunity
 import com.injuv.voluntariado.data.ProfilePreferences
 import com.injuv.voluntariado.data.SessionPreferences
+import com.injuv.voluntariado.data.Skill
 import com.injuv.voluntariado.data.UserProfile
 import com.injuv.voluntariado.data.api.Usuario
 import com.injuv.voluntariado.screens.AcademyScreen
@@ -831,6 +832,8 @@ private fun UserProfile.completarCon(u: Usuario): UserProfile = copy(
     region = region.ifBlank { u.region },
     city = city.ifBlank { u.ciudad },
     commune = commune.ifBlank { u.comuna },
+    about = about.ifBlank { u.acerca_de },
+    skills = skills.ifEmpty { u.habilidades.map { Skill(it.nombre, it.nivel) } },
 )
 
 /** Adapta un voluntariado de la API al modelo que usa el panel de tutor. */

@@ -16,6 +16,13 @@ data class OrganizacionRef(
     val rol: String? = null,
 )
 
+/** Habilidad del perfil del voluntario (nombre + nivel 0-100) — viaja entre app y web. */
+@Serializable
+data class HabilidadItem(
+    val nombre: String = "",
+    val nivel: Int = 0,
+)
+
 @Serializable
 data class Usuario(
     val id: Int,
@@ -32,6 +39,8 @@ data class Usuario(
     /** "user" | "organizacion" | "admin" */
     val rol: String = "user",
     val horas_voluntariado: Double = 0.0,
+    val acerca_de: String = "",
+    val habilidades: List<HabilidadItem> = emptyList(),
     val tiene_foto: Boolean = false,
     val foto_version: String? = null,
     val created_at: String? = null,
@@ -260,6 +269,8 @@ data class PerfilUsuarioBody(
     val comuna: String?,
     val sexo: String?,
     val fecha_nacimiento: String?,
+    val acerca_de: String? = null,
+    val habilidades: List<HabilidadItem>? = null,
 )
 
 /**
