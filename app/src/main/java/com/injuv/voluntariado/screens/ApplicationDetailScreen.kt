@@ -447,11 +447,25 @@ private fun PreguntasScreen(
                 Spacer(Modifier.height(8.dp))
                 when (q.tipo) {
                     "alternativas" -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        if (q.multiple) {
+                            Text(
+                                "Puedes elegir varias opciones",
+                                fontFamily = Outfit,
+                                fontSize = 11.sp,
+                                color = T.textMuted,
+                            )
+                        }
+                        val elegidas = (respuestas[q.id] ?: "").split("\n").filter { it.isNotBlank() }.toSet()
                         q.opciones.forEach { opcion ->
                             OpcionRespuesta(
                                 texto = opcion,
-                                seleccionada = respuestas[q.id] == opcion,
-                                onClick = { respuestas = respuestas + (q.id to opcion) },
+                                seleccionada = opcion in elegidas,
+                                onClick = {
+                                    val nuevas = if (q.multiple) {
+                                        if (opcion in elegidas) elegidas - opcion else elegidas + opcion
+                                    } else setOf(opcion)
+                                    respuestas = respuestas + (q.id to nuevas.joinToString("\n"))
+                                },
                             )
                         }
                     }
